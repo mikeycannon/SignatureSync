@@ -4,3 +4,11 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Replit auto-generated files
+attached_assets/
+.replit
+replit.nix
+
+# Temporary deployment files
+deployment/railway-fix-connection.md
