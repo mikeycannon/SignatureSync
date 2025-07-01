@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id                Int      @id @default(autoincrement())
+  name              String
+  domain            String   @unique
+  subscription_plan String   @default("starter")
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  users               User[]
+  signature_templates SignatureTemplate[]
+  processing_logs     ProcessingLog[]
+
+  @@map("tenants")
+  @@index([domain])
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  tenant_id     Int
+  email         String   @unique
+  password_hash String
+  role          String   @default("user") // admin, user
+  first_name    String
+  last_name     String
+  title         String?
+  department    String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  tenant               Tenant              @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  created_templates    SignatureTemplate[] @relation("TemplateCreator")
+  template_assignments TemplateAssignment[]
+  processing_logs      ProcessingLog[]
+
+  @@map("users")
+  @@index([tenant_id])
+  @@index([email])
+}
+
+model SignatureTemplate {
+  id           Int      @id @default(autoincrement())
+  tenant_id    Int
+  name         String
+  html_content String   @db.Text
+  is_default   Boolean  @default(false)
+  created_by   Int
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  tenant               Tenant               @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  creator              User                 @relation("TemplateCreator", fields: [created_by], references: [id])
+  template_assignments TemplateAssignment[]
+
+  @@map("signature_templates")
+  @@index([tenant_id])
+  @@index([created_by])
+}
+
+model TemplateAssignment {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  template_id Int
+  assigned_at DateTime @default(now())
+
+  // Relations
+  user     User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  template SignatureTemplate @relation(fields: [template_id], references: [id], onDelete: Cascade)
+
+  @@map("template_assignments")
+  @@unique([user_id, template_id])
+  @@index([user_id])
+  @@index([template_id])
+}
+
+model ProcessingLog {
+  id           Int      @id @default(autoincrement())
+  tenant_id    Int
+  user_id      Int
+  email_id     String
+  processed_at DateTime @default(now())
+  status       String   // success, error, pending
+
+  // Relations
+  tenant Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("processing_logs")
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([email_id])
+  @@index([processed_at])
+}

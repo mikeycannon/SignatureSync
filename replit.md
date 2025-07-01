@@ -100,7 +100,8 @@ The application follows a modern full-stack architecture with clear separation b
 - `npm run db:push`: Apply database schema changes
 
 ## Changelog
-- July 01, 2025. Initial setup
+- July 01, 2025. Initial setup with Drizzle ORM and in-memory storage
+- July 01, 2025. Migrated to PostgreSQL with Prisma ORM, complete schema implementation with 5 tables
 
 ## User Preferences
 
