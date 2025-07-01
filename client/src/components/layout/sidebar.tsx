@@ -28,7 +28,12 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const [location] = useLocation();
   const { user, tenant, logout } = useAuth();
 
@@ -37,7 +42,10 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex flex-shrink-0">
+    <div className={`
+      flex flex-shrink-0 z-50
+      ${isOpen ? 'fixed inset-y-0 left-0 md:relative' : 'hidden md:flex'}
+    `}>
       <div className="flex flex-col w-64 bg-white border-r border-gray-200 min-h-full">
         {/* Logo */}
         <div className="flex items-center flex-shrink-0 px-6 py-4 border-b border-gray-200">
@@ -59,13 +67,16 @@ export function Sidebar() {
             
             return (
               <Link key={item.name} href={item.href}>
-                <div className={`
-                  flex items-center px-3 py-2 text-sm font-medium rounded-lg group cursor-pointer transition-colors
-                  ${isActive 
-                    ? "text-primary-700 bg-primary-50" 
-                    : "text-gray-700 hover:bg-gray-100"
-                  }
-                `}>
+                <div 
+                  className={`
+                    flex items-center px-3 py-2 text-sm font-medium rounded-lg group cursor-pointer transition-colors
+                    ${isActive 
+                      ? "text-primary-700 bg-primary-50" 
+                      : "text-gray-700 hover:bg-gray-100"
+                    }
+                  `}
+                  onClick={() => onClose?.()}
+                >
                   <Icon className={`mr-3 h-5 w-5 ${isActive ? "text-primary-500" : "text-gray-400"}`} />
                   {item.name}
                 </div>
