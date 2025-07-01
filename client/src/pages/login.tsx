@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileSignature } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
@@ -24,16 +24,15 @@ export default function Login() {
     setIsLoading(true);
     setError("");
 
-    const result = await login(email, password);
-    
-    if (result.success) {
+    try {
+      await login(email, password);
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      setLocation("/dashboard");
-    } else {
-      setError(typeof result.error === 'string' ? result.error : "Login failed");
+      setLocation("/");
+    } catch (error: any) {
+      setError(error.message || "Login failed");
     }
     
     setIsLoading(false);

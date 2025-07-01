@@ -1,9 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes-prisma";
 import { setupVite, serveStatic, log } from "./vite";
+import authRoutes from "./routes/auth";
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
@@ -37,7 +40,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  // Register auth routes first
+app.use("/api/auth", authRoutes);
+
+const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

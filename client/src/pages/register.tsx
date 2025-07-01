@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileSignature } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Register() {
@@ -48,16 +48,24 @@ export default function Register() {
       return;
     }
 
-    const result = await register(formData);
-    
-    if (result.success) {
+    try {
+      await register({
+        organizationName: formData.tenantName,
+        domain: formData.tenantSlug + ".com",
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      });
+      
       toast({
         title: "Welcome to SignatureHub!",
         description: "Your account has been created successfully.",
       });
-      setLocation("/dashboard");
-    } else {
-      setError(typeof result.error === 'string' ? result.error : "Registration failed");
+      setLocation("/");
+    } catch (error: any) {
+      setError(error.message || "Registration failed");
     }
     
     setIsLoading(false);
