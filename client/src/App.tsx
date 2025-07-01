@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AppLayout } from "@/components/layout/app-layout";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -75,47 +76,61 @@ function Router() {
       </Route>
 
       {/* Protected routes */}
-      <Route path="/" exact>
+      <Route path="/">
         <ProtectedRoute>
-          <Dashboard />
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
         </ProtectedRoute>
       </Route>
 
       <Route path="/dashboard">
         <ProtectedRoute>
-          <Dashboard />
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
         </ProtectedRoute>
       </Route>
 
-      <Route path="/templates" exact>
+      <Route path="/templates">
         <ProtectedRoute>
-          <Templates />
+          <AppLayout>
+            <Templates />
+          </AppLayout>
         </ProtectedRoute>
       </Route>
 
       <Route path="/templates/new">
         <ProtectedRoute>
-          <TemplateEditor />
+          <AppLayout>
+            <TemplateEditor />
+          </AppLayout>
         </ProtectedRoute>
       </Route>
 
       <Route path="/templates/:id/edit">
         {(params) => (
           <ProtectedRoute>
-            <TemplateEditor templateId={parseInt(params.id)} />
+            <AppLayout>
+              <TemplateEditor templateId={parseInt(params.id)} />
+            </AppLayout>
           </ProtectedRoute>
         )}
       </Route>
 
       <Route path="/team">
         <ProtectedRoute>
-          <Team />
+          <AppLayout>
+            <Team />
+          </AppLayout>
         </ProtectedRoute>
       </Route>
 
       <Route path="/assets">
         <ProtectedRoute>
-          <Assets />
+          <AppLayout>
+            <Assets />
+          </AppLayout>
         </ProtectedRoute>
       </Route>
 
