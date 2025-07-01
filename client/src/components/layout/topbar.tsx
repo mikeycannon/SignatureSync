@@ -16,8 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTenant } from "@/hooks/use-tenant";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 
 interface TopBarProps {
@@ -26,8 +25,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ title, onMobileMenuToggle }: TopBarProps) {
-  const { tenant } = useTenant();
-  const { user, logout } = useAuth();
+  const { user, tenant, logout } = useAuth();
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -45,17 +43,12 @@ export function TopBar({ title, onMobileMenuToggle }: TopBarProps) {
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Tenant Selector - For future multi-tenant switching */}
-          <Select defaultValue={tenant?.slug}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select tenant" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={tenant?.slug || "default"}>
-                {tenant?.name || "Default Tenant"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Tenant Info */}
+          {tenant && (
+            <div className="text-sm text-gray-600">
+              {tenant.name}
+            </div>
+          )}
 
           {/* Notifications */}
           <Button variant="ghost" size="sm" className="relative">
@@ -82,9 +75,8 @@ export function TopBar({ title, onMobileMenuToggle }: TopBarProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
                     <AvatarFallback>
-                      {user.firstName[0]}{user.lastName[0]}
+                      {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'S'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>

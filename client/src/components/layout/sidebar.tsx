@@ -17,8 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/use-auth";
-import { useTenant } from "@/hooks/use-tenant";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -31,16 +30,26 @@ const navigation = [
 
 export function Sidebar() {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
-  const { tenant } = useTenant();
+  const { user, tenant, logout } = useAuth();
+
+  // Debug logging
+  console.log('Sidebar render - user:', !!user, 'tenant:', !!tenant);
 
   if (!user || !tenant) {
-    return null;
+    return (
+      <div className="flex flex-shrink-0">
+        <div className="flex flex-col w-64 bg-gray-100 border-r border-gray-200 min-h-full">
+          <div className="p-4">
+            <div className="text-sm text-gray-500">Loading sidebar...</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="hidden md:flex md:flex-shrink-0">
-      <div className="flex flex-col w-64 bg-white border-r border-gray-200">
+    <div className="flex flex-shrink-0">
+      <div className="flex flex-col w-64 bg-white border-r border-gray-200 min-h-full">
         {/* Logo */}
         <div className="flex items-center flex-shrink-0 px-6 py-4 border-b border-gray-200">
           <div className="flex items-center">
@@ -83,9 +92,8 @@ export function Sidebar() {
               <Button variant="ghost" className="w-full p-0 h-auto hover:bg-gray-50">
                 <div className="flex items-center w-full">
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
                     <AvatarFallback>
-                      {user.firstName[0]}{user.lastName[0]}
+                      {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'S'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="ml-3 text-left flex-1">
