@@ -1,0 +1,10 @@
+nixpacks.toml
+Dockerfile
+Dockerfile.backend
+Dockerfile.frontend
+docker-compose.yml
+docker-compose.override.yml
+.dockerignore
+.env.docker
+docker/
+scripts/docker-dev.sh
