@@ -1,0 +1,46 @@
+# Docker Compose override for development
+# This file extends docker-compose.yml with development-specific settings
+
+version: '3.8'
+
+services:
+  backend:
+    # Mount source code for hot reload
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./uploads:/app/uploads
+    # Enable debug mode
+    environment:
+      - DEBUG=*
+      - NODE_ENV=development
+    # Restart on failure during development
+    restart: unless-stopped
+
+  frontend:
+    # Mount source code for hot reload
+    volumes:
+      - .:/app
+      - /app/node_modules
+    # Enable Vite dev server optimizations
+    environment:
+      - VITE_HMR_PORT=5173
+    # Restart on failure during development
+    restart: unless-stopped
+
+  postgres:
+    # Expose port for direct database access during development
+    ports:
+      - "5432:5432"
+    # Mount SQL scripts for easy development
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+      - ./backups:/backups  # For database backups during development
+
+  redis:
+    # Expose port for direct Redis access during development
+    ports:
+      - "6379:6379"
+    # Enable Redis persistence for development
+    command: redis-server --appendonly yes

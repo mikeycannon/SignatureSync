@@ -99,9 +99,49 @@ The application follows a modern full-stack architecture with clear separation b
 - `npm run start`: Start production server
 - `npm run db:push`: Apply database schema changes
 
+## Docker Development Setup
+
+### Overview
+Complete Docker configuration for development environment with:
+- **PostgreSQL 15**: Database with initialization scripts
+- **Redis 7**: Session storage and caching
+- **Backend**: Node.js with hot reload via tsx
+- **Frontend**: Vite dev server with hot reload
+- **Docker Compose**: Orchestration with health checks
+
+### Configuration Files
+- `Dockerfile.backend`: Backend container with development dependencies
+- `Dockerfile.frontend`: Frontend container with Vite dev server
+- `docker-compose.yml`: Multi-service orchestration
+- `.env.docker`: Environment variables template
+- `docker/postgres/init/01-init.sql`: Database initialization
+- `scripts/docker-dev.sh`: Development helper scripts
+
+### Quick Start
+```bash
+# Start development environment
+./scripts/docker-dev.sh up
+
+# Access services
+- Frontend: http://localhost:5173
+- Backend: http://localhost:5000
+- PostgreSQL: localhost:5432
+- Redis: localhost:6379
+```
+
+### Features
+- Hot reload for both frontend and backend
+- Volume mounting for development
+- Health checks for service dependencies
+- Database initialization scripts
+- Redis session storage integration
+- Development helper scripts
+
 ## Changelog
 - July 01, 2025. Initial setup with Drizzle ORM and in-memory storage
 - July 01, 2025. Migrated to PostgreSQL with Prisma ORM, complete schema implementation with 5 tables
+- July 01, 2025. Fixed authentication system - token field mismatch and query client authorization headers
+- July 01, 2025. Added comprehensive Docker development setup with PostgreSQL, Redis, hot reload
 
 ## User Preferences
 
