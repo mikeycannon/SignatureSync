@@ -32,19 +32,8 @@ export function Sidebar() {
   const [location] = useLocation();
   const { user, tenant, logout } = useAuth();
 
-  // Debug logging
-  console.log('Sidebar render - user:', !!user, 'tenant:', !!tenant);
-
   if (!user || !tenant) {
-    return (
-      <div className="flex flex-shrink-0">
-        <div className="flex flex-col w-64 bg-gray-100 border-r border-gray-200 min-h-full">
-          <div className="p-4">
-            <div className="text-sm text-gray-500">Loading sidebar...</div>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

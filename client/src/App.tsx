@@ -78,59 +78,45 @@ function Router() {
       {/* Protected routes */}
       <Route path="/">
         <ProtectedRoute>
-          <AppLayout>
-            <Dashboard />
-          </AppLayout>
+          <Dashboard />
         </ProtectedRoute>
       </Route>
 
       <Route path="/dashboard">
         <ProtectedRoute>
-          <AppLayout>
-            <Dashboard />
-          </AppLayout>
+          <Dashboard />
         </ProtectedRoute>
       </Route>
 
       <Route path="/templates">
         <ProtectedRoute>
-          <AppLayout>
-            <Templates />
-          </AppLayout>
+          <Templates />
         </ProtectedRoute>
       </Route>
 
       <Route path="/templates/new">
         <ProtectedRoute>
-          <AppLayout>
-            <TemplateEditor />
-          </AppLayout>
+          <TemplateEditor />
         </ProtectedRoute>
       </Route>
 
       <Route path="/templates/:id/edit">
         {(params) => (
           <ProtectedRoute>
-            <AppLayout>
-              <TemplateEditor templateId={parseInt(params.id)} />
-            </AppLayout>
+            <TemplateEditor templateId={parseInt(params.id)} />
           </ProtectedRoute>
         )}
       </Route>
 
       <Route path="/team">
         <ProtectedRoute>
-          <AppLayout>
-            <Team />
-          </AppLayout>
+          <Team />
         </ProtectedRoute>
       </Route>
 
       <Route path="/assets">
         <ProtectedRoute>
-          <AppLayout>
-            <Assets />
-          </AppLayout>
+          <Assets />
         </ProtectedRoute>
       </Route>
 
