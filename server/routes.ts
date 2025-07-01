@@ -126,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({
-        token,
+        accessToken: token,
         user: {
           id: user.id,
           email: user.email,
@@ -183,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({
-        token,
+        accessToken: token,
         user: {
           id: user.id,
           email: user.email,
@@ -205,6 +205,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(500).json({ error: "Login failed" });
     }
+  });
+
+  app.post("/api/auth/refresh", async (req, res) => {
+    // For simplicity in this demo, just return success
+    // In a real app, you'd validate refresh tokens and generate new access tokens
+    res.json({
+      accessToken: "refreshed-token-placeholder"
+    });
   });
 
   app.get("/api/auth/me", requireAuth, async (req: any, res) => {
