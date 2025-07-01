@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { setupVite, serveStatic, log } from "./vite";
-import apiRoutes from "./routes";
+import { registerRoutes } from "./routes";
 import { errorHandler, notFoundHandler } from "./middleware/error";
 
 const app = express();
@@ -57,10 +57,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Register auth routes first
-app.use("/api/auth", authRoutes);
-
-const server = await registerRoutes(app);
+  // Register all routes
+  const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
