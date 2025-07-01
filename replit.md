@@ -142,6 +142,32 @@ Complete Docker configuration for development environment with:
 - July 01, 2025. Migrated to PostgreSQL with Prisma ORM, complete schema implementation with 5 tables
 - July 01, 2025. Fixed authentication system - token field mismatch and query client authorization headers
 - July 01, 2025. Added comprehensive Docker development setup with PostgreSQL, Redis, hot reload
+- July 01, 2025. Created production deployment configurations for Railway ($13/month), DigitalOcean ($17/month), and VPS ($6-12/month) with health checks and SSL support
+
+## Deployment Options
+
+### Small Setup (Recommended for Starting)
+Three cost-effective deployment options have been configured:
+
+1. **Railway ($13/month)** - Easiest deployment
+   - One-click GitHub integration
+   - Managed PostgreSQL and Redis
+   - Automatic SSL and scaling
+   - Configuration: `railway.toml`
+
+2. **DigitalOcean App Platform ($17/month)** - Reliable platform
+   - Auto-scaling and monitoring
+   - Managed databases included
+   - Built-in SSL and backups
+   - Guide: `deployment/digitalocean.md`
+
+3. **VPS Self-hosted ($6-12/month)** - Most affordable
+   - Full control over server
+   - Docker Compose setup
+   - Manual management required
+   - Setup script: `deployment/vps-setup.sh`
+
+All options include production Dockerfile, health checks, and environment configuration.
 
 ## User Preferences
 
