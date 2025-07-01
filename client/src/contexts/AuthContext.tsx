@@ -250,60 +250,52 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
-      // Check if token needs refresh
-      if (shouldRefreshToken(storedToken)) {
-        const refreshSuccess = await refreshToken();
-        if (!refreshSuccess) {
-          return; // Auth state already cleared by refreshToken
-        }
-      } else {
-        // Token is still valid, verify with server
-        try {
-          const response = await fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${storedToken}`
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setAuthData({
-              accessToken: storedToken,
-              user: data.user,
-              tenant: data.tenant,
-            });
-          } else {
-            clearAuthData();
+      // Token is present, verify with server
+      try {
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`
           }
-        } catch (error) {
-          console.error('Auth verification failed:', error);
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setAuthData({
+            accessToken: storedToken,
+            user: data.user,
+            tenant: data.tenant,
+          });
+        } else {
           clearAuthData();
         }
+      } catch (error) {
+        console.error('Auth verification failed:', error);
+        clearAuthData();
       }
     };
 
     initializeAuth();
   }, []);
 
-  // Auto-refresh token before expiry
-  useEffect(() => {
-    if (!authState.accessToken || !authState.isAuthenticated) {
-      return;
-    }
+  // Auto-refresh token before expiry (disabled for now to simplify login flow)
+  // useEffect(() => {
+  //   if (!authState.accessToken || !authState.isAuthenticated) {
+  //     return;
+  //   }
 
-    const expiry = getTokenExpiry(authState.accessToken);
-    if (!expiry) return;
+  //   const expiry = getTokenExpiry(authState.accessToken);
+  //   if (!expiry) return;
 
-    const timeUntilRefresh = expiry - Date.now() - TOKEN_REFRESH_THRESHOLD;
+  //   const timeUntilRefresh = expiry - Date.now() - TOKEN_REFRESH_THRESHOLD;
     
-    if (timeUntilRefresh > 0) {
-      const timeout = setTimeout(() => {
-        refreshToken();
-      }, timeUntilRefresh);
+  //   if (timeUntilRefresh > 0) {
+  //     const timeout = setTimeout(() => {
+  //       refreshToken();
+  //     }, timeUntilRefresh);
 
-      return () => clearTimeout(timeout);
-    }
-  }, [authState.accessToken]);
+  //     return () => clearTimeout(timeout);
+  //   }
+  // }, [authState.accessToken]);
 
   const contextValue: AuthContextType = {
     ...authState,
