@@ -22,6 +22,7 @@ model Tenant {
   users               User[]
   signature_templates SignatureTemplate[]
   processing_logs     ProcessingLog[]
+  assets              Asset[]
 
   @@map("tenants")
   @@index([domain])
@@ -46,6 +47,7 @@ model User {
   created_templates    SignatureTemplate[] @relation("TemplateCreator")
   template_assignments TemplateAssignment[]
   processing_logs      ProcessingLog[]
+  uploaded_assets      Asset[]
 
   @@map("users")
   @@index([tenant_id])
@@ -105,4 +107,27 @@ model ProcessingLog {
   @@index([user_id])
   @@index([email_id])
   @@index([processed_at])
+}
+
+model Asset {
+  id          Int      @id @default(autoincrement())
+  tenant_id   Int
+  name        String
+  filename    String
+  mime_type   String
+  size        Int
+  url         String
+  type        String   @default("image") // logo, image, avatar
+  description String?
+  uploaded_by Int
+  created_at  DateTime @default(now())
+
+  // Relations
+  tenant           Tenant @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  uploaded_by_user User   @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
+
+  @@map("assets")
+  @@index([tenant_id])
+  @@index([uploaded_by])
+  @@index([type])
 }

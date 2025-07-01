@@ -1,12 +1,29 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
-import { registerRoutes } from "./routes-prisma";
+import cors from "cors";
 import { setupVite, serveStatic, log } from "./vite";
-import authRoutes from "./routes/auth";
+import apiRoutes from "./routes";
+import { errorHandler, notFoundHandler } from "./middleware/error";
 
 const app = express();
-app.use(express.json());
+
+// Trust proxy for accurate IP addresses
+app.set('trust proxy', 1);
+
+// Basic middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.ALLOWED_ORIGINS?.split(',') || []
+    : true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
