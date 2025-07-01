@@ -3,9 +3,10 @@ import { TopBar } from "./topbar";
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  title?: string;
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, title = "Dashboard" }: AppLayoutProps) {
   return (
     <div className="h-screen flex bg-gray-50">
       {/* Sidebar */}
@@ -14,7 +15,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <TopBar title="Dashboard" />
+        <TopBar title={title} />
         
         {/* Page content */}
         <main className="flex-1 overflow-auto">
