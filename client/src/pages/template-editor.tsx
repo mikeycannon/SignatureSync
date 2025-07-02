@@ -153,6 +153,10 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     enabled: !!templateId,
   });
 
+  const { data: allTemplates } = useQuery<SignatureTemplate[]>({
+    queryKey: ['/api/templates'],
+  });
+
   const form = useForm<TemplateFormData>({
     resolver: zodResolver(templateFormSchema),
     defaultValues: {
@@ -174,6 +178,15 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       logoUrl: "",
     }
   });
+
+  // Generate automatic template name for new templates
+  useEffect(() => {
+    if (!templateId && allTemplates && form.watch("name") === "") {
+      const templateCount = allTemplates.length;
+      const newTemplateName = `Signature #${templateCount + 1}`;
+      form.setValue("name", newTemplateName);
+    }
+  }, [allTemplates, templateId, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: TemplateFormData) => {
@@ -749,7 +762,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   <Input
                     id="template-name"
                     {...form.register("name")}
-                    placeholder="Create New Template"
+                    placeholder="Signature #1"
                     className="text-3xl font-bold text-gray-900 border-none bg-transparent p-0 shadow-none focus:border focus:bg-white focus:shadow-sm focus:p-3 focus:rounded-md transition-all"
                   />
                   {form.formState.errors.name && (
@@ -792,12 +805,12 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                     <CardHeader>
                       <div className="space-y-4">
                         <CardTitle>Live Preview</CardTitle>
-                        <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 w-fit">
+                        <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 w-full sm:w-fit">
                           <Button
                             type="button"
                             variant={previewFormat === "desktop" ? "default" : "ghost"}
                             size="sm"
-                            className="h-8 px-3"
+                            className="h-8 px-3 flex-1"
                             onClick={() => setPreviewFormat("desktop")}
                           >
                             <Monitor className="h-4 w-4 mr-1" />
@@ -807,7 +820,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                             type="button"
                             variant={previewFormat === "mobile" ? "default" : "ghost"}
                             size="sm"
-                            className="h-8 px-3"
+                            className="h-8 px-3 flex-1"
                             onClick={() => setPreviewFormat("mobile")}
                           >
                             <Smartphone className="h-4 w-4 mr-1" />
