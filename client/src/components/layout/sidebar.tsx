@@ -96,24 +96,27 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="right" className="w-56 ml-2">
-              <div className="px-3 py-2 border-b">
-                <p className="text-sm font-medium text-gray-900">
-                  {user.firstName} {user.lastName}
-                </p>
-                <p className="text-xs text-gray-500">{user.email}</p>
-                <p className="text-xs text-gray-500 mt-1">{tenant.name}</p>
+              <div className="flex items-center justify-start gap-3 p-3">
+                <div className="flex flex-col space-y-1 leading-none">
+                  <p className="font-medium text-gray-900">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {user.email}
+                  </p>
+                </div>
               </div>
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
+              <DropdownMenuItem className="py-2">
+                <User className="mr-3 h-4 w-4" />
+                <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
+              <DropdownMenuItem className="py-2">
+                <Settings className="mr-3 h-4 w-4" />
+                <span>Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={logout}>
-                <span className="mr-2 h-4 w-4">🚪</span>
-                Sign out
+              <DropdownMenuItem onClick={logout} className="py-2">
+                <span className="mr-3 h-4 w-4">↗</span>
+                <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
