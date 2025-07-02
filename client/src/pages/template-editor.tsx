@@ -267,7 +267,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                     id="template-name"
                     {...form.register("name")}
                     placeholder="Create New Template"
-                    className="text-2xl font-bold text-gray-900 border-none bg-transparent p-0 shadow-none focus:border focus:bg-white focus:shadow-sm focus:p-3 focus:rounded-md transition-all"
+                    className="text-3xl font-bold text-gray-900 border-none bg-transparent p-0 shadow-none focus:border focus:bg-white focus:shadow-sm focus:p-3 focus:rounded-md transition-all"
                   />
                   {form.formState.errors.name && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.name.message}</p>
