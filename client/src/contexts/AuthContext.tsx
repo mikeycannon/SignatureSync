@@ -191,7 +191,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Registration failed');
+        
+        // Handle validation errors from Zod
+        if (error.details && Array.isArray(error.details)) {
+          const validationErrors = error.details.map((err: any) => err.message).join(', ');
+          throw new Error(validationErrors);
+        }
+        
+        // Handle other error formats
+        throw new Error(error.error || error.message || 'Registration failed');
       }
 
       const data = await response.json();

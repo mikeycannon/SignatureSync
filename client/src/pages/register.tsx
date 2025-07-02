@@ -65,7 +65,20 @@ export default function Register() {
       });
       setLocation("/");
     } catch (error: any) {
-      setError(error.message || "Registration failed");
+      console.error('Registration error:', error);
+      
+      // Handle different error formats
+      let errorMessage = "Registration failed";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error.error) {
+        errorMessage = error.error;
+      }
+      
+      setError(errorMessage);
     }
     
     setIsLoading(false);
