@@ -521,7 +521,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       return styles[formatting as keyof typeof styles] || styles.modern;
     };
 
-    const styles = getFormattingStyles(data.formatting);
+    const styles = getFormattingStyles(data.formatting || "modern");
 
     let signatureHtml = `
       <div style="${styles.container}">
@@ -744,8 +744,8 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 Back to Templates
               </Button>
               
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex-1 max-w-md">
+              <div className="mb-6">
+                <div className="flex-1 max-w-md mb-4">
                   <Input
                     id="template-name"
                     {...form.register("name")}
@@ -757,9 +757,10 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   )}
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                {/* Mobile: Buttons under title, Desktop: Buttons on the right */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                   <Select value={form.watch("status")} onValueChange={(value: "draft" | "active" | "archived") => form.setValue("status", value)}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -772,7 +773,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   <Button
                     type="submit"
                     disabled={mutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
                     onClick={form.handleSubmit(handleSave)}
                   >
                     <Save className="h-4 w-4 mr-2" />
@@ -788,29 +789,31 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               <div className="lg:col-span-6">
                 <div className="sticky top-6">
                   <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                      <CardTitle>Live Preview</CardTitle>
-                      <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                      <Button
-                        type="button"
-                        variant={previewFormat === "desktop" ? "default" : "ghost"}
-                        size="sm"
-                        className="h-8 px-3"
-                        onClick={() => setPreviewFormat("desktop")}
-                      >
-                        <Monitor className="h-4 w-4 mr-1" />
-                        Desktop
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={previewFormat === "mobile" ? "default" : "ghost"}
-                        size="sm"
-                        className="h-8 px-3"
-                        onClick={() => setPreviewFormat("mobile")}
-                      >
-                        <Smartphone className="h-4 w-4 mr-1" />
-                        Mobile
-                      </Button>
+                    <CardHeader>
+                      <div className="space-y-4">
+                        <CardTitle>Live Preview</CardTitle>
+                        <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 w-fit">
+                          <Button
+                            type="button"
+                            variant={previewFormat === "desktop" ? "default" : "ghost"}
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => setPreviewFormat("desktop")}
+                          >
+                            <Monitor className="h-4 w-4 mr-1" />
+                            Desktop
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={previewFormat === "mobile" ? "default" : "ghost"}
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => setPreviewFormat("mobile")}
+                          >
+                            <Smartphone className="h-4 w-4 mr-1" />
+                            Mobile
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                   <CardContent>
