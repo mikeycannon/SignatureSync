@@ -713,10 +713,10 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               </div>
             </div>
 
-            {/* Main Layout: Preview (2/3) + Editor (1/3) */}
-            <div className="flex gap-6">
-              {/* Left Column - Preview (2/3 width) */}
-              <div className="flex-1" style={{ flex: '2' }}>
+            {/* Main Layout: Preview (8/12) + Editor (4/12) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column - Preview (8/12 width) */}
+              <div className="lg:col-span-8">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle>Live Preview</CardTitle>
@@ -796,8 +796,8 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 </Card>
               </div>
 
-              {/* Right Column - Signature Editor (1/3 width) */}
-              <div className="w-1/3">
+              {/* Right Column - Signature Editor (4/12 width) */}
+              <div className="lg:col-span-4">
                 <form onSubmit={form.handleSubmit(handleSave)}>
                   <Card>
                     <CardHeader>
