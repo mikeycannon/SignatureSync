@@ -289,9 +289,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 transition: 'all 0.2s'
               }}
             >
-              {data.email && <div style={{ marginBottom: '2px' }}><a href={`mailto:${data.email}`} style={{ color: customStyles.linkColor, textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>{data.email}</a></div>}
+              {data.email && <div style={{ marginBottom: '2px' }}><span style={{ color: customStyles.linkColor, textDecoration: 'none', cursor: 'default' }}>{data.email}</span></div>}
               {data.phone && <div style={{ marginBottom: '2px' }}>{data.phone}</div>}
-              {data.website && <div style={{ marginBottom: '2px' }}><a href={data.website} style={{ color: customStyles.linkColor, textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>{data.website}</a></div>}
+              {data.website && <div style={{ marginBottom: '2px' }}><span style={{ color: customStyles.linkColor, textDecoration: 'none', cursor: 'default' }}>{data.website}</span></div>}
             </div>
             
             {(data.linkedIn || data.twitter || data.instagram) && (
@@ -307,9 +307,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   transition: 'all 0.2s'
                 }}
               >
-                {data.linkedIn && <a href={data.linkedIn} style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px' }} onClick={(e) => e.stopPropagation()}>LinkedIn</a>}
-                {data.twitter && <a href={data.twitter} style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px' }} onClick={(e) => e.stopPropagation()}>Twitter</a>}
-                {data.instagram && <a href={data.instagram} style={{ color: customStyles.linkColor, textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>Instagram</a>}
+                {data.linkedIn && <span style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px', cursor: 'default' }}>LinkedIn</span>}
+                {data.twitter && <span style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px', cursor: 'default' }}>Twitter</span>}
+                {data.instagram && <span style={{ color: customStyles.linkColor, textDecoration: 'none', cursor: 'default' }}>Instagram</span>}
               </div>
             )}
           </div>
@@ -317,13 +317,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         
         {data.promotionalImage && (
           <div style={{ marginTop: '15px' }}>
-            {data.promotionalLink ? (
-              <a href={data.promotionalLink} target="_blank" style={{ display: 'block' }}>
-                <img src={data.promotionalImage} alt="Promotional Banner" style={{ maxWidth: '100%', height: 'auto', border: 'none' }} />
-              </a>
-            ) : (
-              <img src={data.promotionalImage} alt="Promotional Banner" style={{ maxWidth: '100%', height: 'auto', border: 'none' }} />
-            )}
+            <img src={data.promotionalImage} alt="Promotional Banner" style={{ maxWidth: '100%', height: 'auto', border: 'none', cursor: 'default' }} />
           </div>
         )}
       </div>
