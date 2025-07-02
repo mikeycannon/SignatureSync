@@ -50,7 +50,7 @@ export default function Register() {
 
     try {
       await register({
-        organizationName: formData.tenantName,
+        companyName: formData.tenantName,
         domain: formData.tenantSlug + ".com", 
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -96,7 +96,7 @@ export default function Register() {
           <div className="text-center">
             <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
             <CardDescription>
-              Set up your organization and start managing signatures
+              Set up your company and start managing signatures
             </CardDescription>
           </div>
         </CardHeader>
@@ -109,12 +109,12 @@ export default function Register() {
               </Alert>
             )}
             
-            {/* Organization Details */}
+            {/* Company Details */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900">Organization Details</h3>
+              <h3 className="text-sm font-medium text-gray-900">Company Details</h3>
               
               <div className="space-y-2">
-                <Label htmlFor="tenantName">Organization Name</Label>
+                <Label htmlFor="tenantName">Company Name</Label>
                 <Input
                   id="tenantName"
                   value={formData.tenantName}
@@ -125,7 +125,7 @@ export default function Register() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="tenantSlug">Organization URL</Label>
+                <Label htmlFor="tenantSlug">Company URL</Label>
                 <div className="flex items-center">
                   <span className="text-sm text-gray-500 mr-1">signaturehub.com/</span>
                   <Input

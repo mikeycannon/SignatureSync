@@ -82,21 +82,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { organizationName, domain, ...userData } = req.body;
+      const { companyName, domain, ...userData } = req.body;
       
       // Extract slug from domain (remove .com if present)
       const slug = domain.replace(/\.com$/, '');
       
       // Create tenant data
       const tenantData = {
-        name: organizationName,
+        name: companyName,
         slug: slug,
       };
 
-      // Check if tenant slug is available
+      // Check if company slug is available
       const existingTenant = await storage.getTenantBySlug(tenantData.slug);
       if (existingTenant) {
-        return res.status(400).json({ error: "Tenant slug already taken" });
+        return res.status(400).json({ error: "Company URL already taken" });
       }
 
       // Check if user email is available

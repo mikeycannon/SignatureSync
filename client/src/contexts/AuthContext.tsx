@@ -35,7 +35,7 @@ export interface AuthContextType extends AuthState {
 }
 
 export interface RegisterData {
-  organizationName: string;
+  companyName: string;
   domain: string;
   firstName: string;
   lastName: string;
