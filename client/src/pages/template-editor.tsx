@@ -263,12 +263,11 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               
               <div className="flex items-center justify-between mb-6">
                 <div className="flex-1 max-w-md">
-                  <Label htmlFor="template-name" className="text-base font-medium">Template Name</Label>
                   <Input
                     id="template-name"
                     {...form.register("name")}
-                    placeholder="Executive Template"
-                    className="mt-1 text-lg font-semibold"
+                    placeholder="Create New Template"
+                    className="text-2xl font-bold text-gray-900 border-none bg-transparent p-0 shadow-none focus:border focus:bg-white focus:shadow-sm focus:p-3 focus:rounded-md transition-all"
                   />
                   {form.formState.errors.name && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.name.message}</p>
