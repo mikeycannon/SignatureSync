@@ -713,10 +713,10 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               </div>
             </div>
 
-            {/* Main Layout: Preview (8/12) + Editor (4/12) */}
+            {/* Main Layout: Preview (6/12) + Editor (6/12) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column - Preview (8/12 width) */}
-              <div className="lg:col-span-8">
+              {/* Left Column - Preview (6/12 width) */}
+              <div className="lg:col-span-6">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle>Live Preview</CardTitle>
@@ -744,7 +744,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className={`signature-preview bg-white border rounded p-4 min-h-32 ${
+                    <div className={`signature-preview bg-white border rounded p-4 min-h-40 ${
                       previewFormat === "mobile" 
                         ? "max-w-sm mx-auto" 
                         : "w-full"
@@ -796,8 +796,8 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 </Card>
               </div>
 
-              {/* Right Column - Signature Editor (4/12 width) */}
-              <div className="lg:col-span-4">
+              {/* Right Column - Signature Editor (6/12 width) */}
+              <div className="lg:col-span-6">
                 <form onSubmit={form.handleSubmit(handleSave)}>
                   <Card>
                     <CardHeader>
@@ -809,7 +809,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
                           Basic Information
                         </h3>
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label htmlFor="fullName" className="text-sm">Full Name</Label>
                             <Input
@@ -831,7 +831,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                               className="text-sm"
                             />
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-2 col-span-2">
                             <Label htmlFor="company" className="text-sm">Company</Label>
                             <Input
                               id="company"
@@ -848,7 +848,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
                           Contact Information
                         </h3>
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label htmlFor="email" className="text-sm">Email Address</Label>
                             <div className="relative">
@@ -876,7 +876,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-2 col-span-2">
                             <Label htmlFor="website" className="text-sm">Website</Label>
                             <div className="relative">
                               <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -896,7 +896,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
                           Social Media
                         </h3>
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label htmlFor="linkedIn" className="text-sm">LinkedIn Profile</Label>
                             <div className="relative">
@@ -921,7 +921,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-2 col-span-2">
                             <Label htmlFor="instagram" className="text-sm">Instagram Profile</Label>
                             <div className="relative">
                               <Instagram className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -941,8 +941,8 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
                           Assets
                         </h3>
-                        <div className="space-y-3">
-                          <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2 col-span-2">
                             <Label htmlFor="logoUrl" className="text-sm">Company Logo URL</Label>
                             <Input
                               id="logoUrl"
