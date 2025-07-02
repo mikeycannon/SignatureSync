@@ -131,12 +131,19 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     nameSize: 18,
     nameColor: "#2563eb",
     nameFont: "Arial",
+    nameWeight: "600",
     roleSize: 14,
     roleColor: "#666666",
+    roleFont: "Arial",
+    roleWeight: "400",
     companySize: 14,
     companyColor: "#666666",
+    companyFont: "Arial",
+    companyWeight: "400",
     contactSize: 13,
     contactColor: "#333333",
+    contactFont: "Arial",
+    contactWeight: "400",
     linkColor: "#2563eb",
     spacing: 8,
     padding: 0,
@@ -151,6 +158,21 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Font options
+  const fontFamilies = [
+    'Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Verdana', 
+    'Trebuchet MS', 'Palatino', 'Garamond', 'Courier New', 'Monaco'
+  ];
+  
+  const fontWeights = [
+    { value: '300', label: 'Light' },
+    { value: '400', label: 'Normal' },
+    { value: '500', label: 'Medium' },
+    { value: '600', label: 'Semi Bold' },
+    { value: '700', label: 'Bold' },
+    { value: '800', label: 'Extra Bold' }
+  ];
 
   const { data: template, isLoading } = useQuery<SignatureTemplate>({
     queryKey: [`/api/templates/${templateId}`],
@@ -281,6 +303,58 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     }
   };
 
+  // Apply style defaults when a formatting option is selected
+  const applyStyleDefaults = (formatting: string) => {
+    if (formatting === 'custom') return; // Keep existing custom styles
+    
+    const defaultStyles = {
+      modern: {
+        nameFont: 'Arial', nameSize: 18, nameColor: '#2563eb', nameWeight: '600',
+        roleFont: 'Arial', roleSize: 14, roleColor: '#6b7280', roleWeight: '400',
+        companyFont: 'Arial', companySize: 14, companyColor: '#6b7280', companyWeight: '400',
+        contactFont: 'Arial', contactSize: 13, contactColor: '#374151', contactWeight: '400'
+      },
+      classic: {
+        nameFont: 'Times New Roman', nameSize: 20, nameColor: '#2c3e50', nameWeight: '700',
+        roleFont: 'Times New Roman', roleSize: 15, roleColor: '#7f8c8d', roleWeight: '400',
+        companyFont: 'Times New Roman', companySize: 15, companyColor: '#7f8c8d', companyWeight: '400',
+        contactFont: 'Times New Roman', contactSize: 14, contactColor: '#2c3e50', contactWeight: '400'
+      },
+      creative: {
+        nameFont: 'Arial', nameSize: 22, nameColor: '#e53e3e', nameWeight: '700',
+        roleFont: 'Arial', roleSize: 14, roleColor: '#805ad5', roleWeight: '500',
+        companyFont: 'Arial', companySize: 14, companyColor: '#38a169', companyWeight: '500',
+        contactFont: 'Arial', contactSize: 13, contactColor: '#2d3748', contactWeight: '400'
+      },
+      minimal: {
+        nameFont: 'Helvetica', nameSize: 16, nameColor: '#333333', nameWeight: '400',
+        roleFont: 'Helvetica', roleSize: 13, roleColor: '#666666', roleWeight: '400',
+        companyFont: 'Helvetica', companySize: 13, companyColor: '#666666', companyWeight: '400',
+        contactFont: 'Helvetica', contactSize: 12, contactColor: '#666666', contactWeight: '400'
+      },
+      corporate: {
+        nameFont: 'Calibri', nameSize: 19, nameColor: '#003366', nameWeight: '700',
+        roleFont: 'Calibri', roleSize: 14, roleColor: '#0066cc', roleWeight: '600',
+        companyFont: 'Calibri', companySize: 15, companyColor: '#003366', companyWeight: '500',
+        contactFont: 'Calibri', contactSize: 13, contactColor: '#003366', contactWeight: '400'
+      },
+      tech: {
+        nameFont: 'Monaco', nameSize: 18, nameColor: '#7c3aed', nameWeight: '600',
+        roleFont: 'Monaco', roleSize: 14, roleColor: '#059669', roleWeight: '400',
+        companyFont: 'Monaco', companySize: 14, companyColor: '#dc2626', companyWeight: '400',
+        contactFont: 'Monaco', contactSize: 13, contactColor: '#374151', contactWeight: '400'
+      }
+    };
+
+    const styleSet = defaultStyles[formatting as keyof typeof defaultStyles];
+    if (styleSet) {
+      setCustomStyles(prevStyles => ({
+        ...prevStyles,
+        ...styleSet
+      }));
+    }
+  };
+
   const mutation = useMutation({
     mutationFn: async (data: TemplateFormData) => {
       const url = templateId ? `/api/templates/${templateId}` : '/api/templates';
@@ -386,7 +460,8 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               onClick={() => setEditingElement(editingElement === 'name' ? null : 'name')}
               style={{ 
                 fontSize: customStyles.nameSize + 'px', 
-                fontWeight: 600, 
+                fontFamily: customStyles.nameFont,
+                fontWeight: customStyles.nameWeight, 
                 color: customStyles.nameColor, 
                 marginBottom: customStyles.spacing + 'px',
                 cursor: 'pointer',
@@ -403,7 +478,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               <div 
                 onClick={() => setEditingElement(editingElement === 'role' ? null : 'role')}
                 style={{ 
-                  fontSize: customStyles.roleSize + 'px', 
+                  fontSize: customStyles.roleSize + 'px',
+                  fontFamily: customStyles.roleFont,
+                  fontWeight: customStyles.roleWeight,
                   color: customStyles.roleColor, 
                   marginBottom: customStyles.spacing * 0.5 + 'px',
                   cursor: 'pointer',
@@ -421,7 +498,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               <div 
                 onClick={() => setEditingElement(editingElement === 'company' ? null : 'company')}
                 style={{ 
-                  fontSize: customStyles.companySize + 'px', 
+                  fontSize: customStyles.companySize + 'px',
+                  fontFamily: customStyles.companyFont,
+                  fontWeight: customStyles.companyWeight,
                   color: customStyles.companyColor, 
                   marginBottom: customStyles.spacing + 'px',
                   cursor: 'pointer',
@@ -446,22 +525,46 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               }}
             >
               {data.email && (
-                <div style={{ fontSize: customStyles.contactSize + 'px', color: customStyles.contactColor, marginBottom: '2px' }}>
+                <div style={{ 
+                  fontSize: customStyles.contactSize + 'px', 
+                  fontFamily: customStyles.contactFont,
+                  fontWeight: customStyles.contactWeight,
+                  color: customStyles.contactColor, 
+                  marginBottom: '2px' 
+                }}>
                   📧 <span style={{ color: customStyles.linkColor }}>{data.email}</span>
                 </div>
               )}
               {data.phone && (
-                <div style={{ fontSize: customStyles.contactSize + 'px', color: customStyles.contactColor, marginBottom: '2px' }}>
+                <div style={{ 
+                  fontSize: customStyles.contactSize + 'px', 
+                  fontFamily: customStyles.contactFont,
+                  fontWeight: customStyles.contactWeight,
+                  color: customStyles.contactColor, 
+                  marginBottom: '2px' 
+                }}>
                   📞 {data.phone}
                 </div>
               )}
               {data.website && (
-                <div style={{ fontSize: customStyles.contactSize + 'px', color: customStyles.contactColor, marginBottom: '2px' }}>
+                <div style={{ 
+                  fontSize: customStyles.contactSize + 'px', 
+                  fontFamily: customStyles.contactFont,
+                  fontWeight: customStyles.contactWeight,
+                  color: customStyles.contactColor, 
+                  marginBottom: '2px' 
+                }}>
                   🌐 <span style={{ color: customStyles.linkColor }}>{data.website}</span>
                 </div>
               )}
               {(data.linkedIn || data.twitter || data.instagram) && (
-                <div style={{ fontSize: customStyles.contactSize + 'px', color: customStyles.contactColor, marginTop: '4px' }}>
+                <div style={{ 
+                  fontSize: customStyles.contactSize + 'px', 
+                  fontFamily: customStyles.contactFont,
+                  fontWeight: customStyles.contactWeight,
+                  color: customStyles.contactColor, 
+                  marginTop: '4px' 
+                }}>
                   {data.linkedIn && <span style={{ marginRight: '8px', color: customStyles.linkColor }}>LinkedIn</span>}
                   {data.twitter && <span style={{ marginRight: '8px', color: customStyles.linkColor }}>Twitter</span>}
                   {data.instagram && <span style={{ color: customStyles.linkColor }}>Instagram</span>}
@@ -614,12 +717,12 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         },
         custom: {
           container: `font-family: ${customStyles.nameFont}, sans-serif; line-height: 1.5; color: #333333; padding: ${customStyles.padding}px;`,
-          name: `font-size: ${customStyles.nameSize}px; font-weight: 600; color: ${customStyles.nameColor}; margin-bottom: ${customStyles.spacing}px;`,
-          role: `font-size: ${customStyles.roleSize}px; color: ${customStyles.roleColor}; margin-bottom: ${customStyles.spacing * 0.5}px;`,
-          company: `font-size: ${customStyles.companySize}px; color: ${customStyles.companyColor}; margin-bottom: ${customStyles.spacing}px;`,
-          contact: `font-size: ${customStyles.contactSize}px; color: ${customStyles.contactColor};`,
+          name: `font-size: ${customStyles.nameSize}px; font-family: ${customStyles.nameFont}; font-weight: ${customStyles.nameWeight}; color: ${customStyles.nameColor}; margin-bottom: ${customStyles.spacing}px;`,
+          role: `font-size: ${customStyles.roleSize}px; font-family: ${customStyles.roleFont}; font-weight: ${customStyles.roleWeight}; color: ${customStyles.roleColor}; margin-bottom: ${customStyles.spacing * 0.5}px;`,
+          company: `font-size: ${customStyles.companySize}px; font-family: ${customStyles.companyFont}; font-weight: ${customStyles.companyWeight}; color: ${customStyles.companyColor}; margin-bottom: ${customStyles.spacing}px;`,
+          contact: `font-size: ${customStyles.contactSize}px; font-family: ${customStyles.contactFont}; font-weight: ${customStyles.contactWeight}; color: ${customStyles.contactColor};`,
           link: `color: ${customStyles.linkColor}; text-decoration: none;`,
-          social: `margin-top: ${customStyles.spacing}px; font-size: ${customStyles.contactSize}px;`,
+          social: `margin-top: ${customStyles.spacing}px; font-size: ${customStyles.contactSize}px; font-family: ${customStyles.contactFont}; font-weight: ${customStyles.contactWeight};`,
           logo: `height: 80px; max-width: 200px; object-fit: contain; border-radius: ${customStyles.logoRadius}px;`,
           promo: `max-width: 100%; height: ${customStyles.promoHeight}px; object-fit: cover; border: none;`
         }
@@ -745,23 +848,55 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   className="w-full h-8 border border-blue-300 rounded cursor-pointer"
                 />
               </div>
-              <div className="col-span-2">
-                <Label className="text-xs text-blue-700">Font</Label>
+              <div>
+                <Label className="text-xs text-blue-700">Font Family</Label>
                 <Select 
-                  value={editingElement === 'name' ? customStyles.nameFont : 'Arial'} 
+                  value={
+                    editingElement === 'name' ? customStyles.nameFont :
+                    editingElement === 'role' ? customStyles.roleFont :
+                    editingElement === 'company' ? customStyles.companyFont :
+                    editingElement === 'contact' ? customStyles.contactFont : 'Arial'
+                  } 
                   onValueChange={(value) => {
                     if (editingElement === 'name') setCustomStyles({...customStyles, nameFont: value});
+                    else if (editingElement === 'role') setCustomStyles({...customStyles, roleFont: value});
+                    else if (editingElement === 'company') setCustomStyles({...customStyles, companyFont: value});
+                    else if (editingElement === 'contact') setCustomStyles({...customStyles, contactFont: value});
                   }}
                 >
                   <SelectTrigger className="w-full h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Arial">Arial</SelectItem>
-                    <SelectItem value="Georgia">Georgia</SelectItem>
-                    <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                    <SelectItem value="Helvetica">Helvetica</SelectItem>
-                    <SelectItem value="Calibri">Calibri</SelectItem>
+                    {fontFamilies.map((font) => (
+                      <SelectItem key={font} value={font}>{font}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-blue-700">Font Weight</Label>
+                <Select 
+                  value={
+                    editingElement === 'name' ? customStyles.nameWeight :
+                    editingElement === 'role' ? customStyles.roleWeight :
+                    editingElement === 'company' ? customStyles.companyWeight :
+                    editingElement === 'contact' ? customStyles.contactWeight : '400'
+                  } 
+                  onValueChange={(value) => {
+                    if (editingElement === 'name') setCustomStyles({...customStyles, nameWeight: value});
+                    else if (editingElement === 'role') setCustomStyles({...customStyles, roleWeight: value});
+                    else if (editingElement === 'company') setCustomStyles({...customStyles, companyWeight: value});
+                    else if (editingElement === 'contact') setCustomStyles({...customStyles, contactWeight: value});
+                  }}
+                >
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fontWeights.map((weight) => (
+                      <SelectItem key={weight.value} value={weight.value}>{weight.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -953,7 +1088,10 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                               ? "border-blue-500 bg-blue-50"
                               : "border-gray-200 bg-white hover:border-gray-300"
                           }`}
-                          onClick={() => form.setValue("formatting", option.value)}
+                          onClick={() => {
+                            form.setValue("formatting", option.value);
+                            applyStyleDefaults(option.value);
+                          }}
                         >
                           <div className={`w-8 h-8 rounded-lg ${option.color} flex items-center justify-center text-white text-lg`}>
                             {option.icon}
