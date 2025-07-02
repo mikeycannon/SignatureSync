@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Select,
   SelectContent,
@@ -38,40 +37,33 @@ import { z } from "zod";
 
 // Formatting options for signature styling
 const FORMATTING_OPTIONS = [
-  { value: "modern", label: "Modern", icon: "💼", color: "bg-blue-500" },
-  { value: "classic", label: "Classic", icon: "🏛️", color: "bg-gray-600" },
-  { value: "creative", label: "Creative", icon: "🎨", color: "bg-purple-500" },
-  { value: "minimal", label: "Minimal", icon: "◯", color: "bg-gray-400" },
-  { value: "corporate", label: "Corporate", icon: "🏢", color: "bg-blue-700" },
-  { value: "tech", label: "Tech", icon: "⚡", color: "bg-indigo-500" },
-  { value: "elegant", label: "Elegant", icon: "✨", color: "bg-pink-500" },
-  { value: "bold", label: "Bold", icon: "💪", color: "bg-red-500" },
-  { value: "compact", label: "Compact", icon: "📏", color: "bg-green-500" },
-  { value: "signature", label: "Signature", icon: "✍️", color: "bg-amber-600" },
-  { value: "custom", label: "Custom", icon: "🎛️", color: "bg-violet-600" }
+  { value: "custom", label: "Custom", color: "bg-purple-500", icon: "🎨" },
+  { value: "modern", label: "Modern", color: "bg-blue-500", icon: "💼" },
+  { value: "classic", label: "Classic", color: "bg-gray-500", icon: "📰" },
+  { value: "creative", label: "Creative", color: "bg-pink-500", icon: "🎭" },
+  { value: "minimal", label: "Minimal", color: "bg-green-500", icon: "✨" },
+  { value: "corporate", label: "Corporate", color: "bg-indigo-500", icon: "🏢" },
+  { value: "tech", label: "Tech", color: "bg-purple-600", icon: "💻" },
+  { value: "elegant", label: "Elegant", color: "bg-rose-500", icon: "👔" },
+  { value: "bold", label: "Bold", color: "bg-red-500", icon: "⚡" },
+  { value: "compact", label: "Compact", color: "bg-yellow-500", icon: "📱" },
+  { value: "signature", label: "Signature", color: "bg-amber-600", icon: "✍️" }
 ];
 
-// Schema for form data (includes signature fields)
-const templateFormSchema = z.object({
-  // Template metadata
-  name: z.string().min(1, "Template name is required"),
-  status: z.enum(["draft", "active", "archived"]).default("draft"),
-  isShared: z.boolean().default(false),
-  formatting: z.string().default("modern"),
-  promotionalImage: z.string().optional(),
-  promotionalLink: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
-  
-  // Signature data fields
+// Schema for template form data
+const templateFormSchema = insertSignatureTemplateSchema.extend({
   fullName: z.string().min(1, "Full name is required"),
   jobTitle: z.string().optional(),
   company: z.string().optional(),
-  email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
+  email: z.string().email("Please enter a valid email").optional().or(z.literal("")),
   phone: z.string().optional(),
-  website: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
+  website: z.string().optional(),
   linkedIn: z.string().optional(),
   twitter: z.string().optional(),
   instagram: z.string().optional(),
   logoUrl: z.string().optional(),
+  promotionalImage: z.string().optional(),
+  promotionalLink: z.string().optional(),
 });
 
 type TemplateFormData = z.infer<typeof templateFormSchema>;
@@ -82,7 +74,6 @@ interface TemplateEditorProps {
 
 export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("basic");
   const [previewFormat, setPreviewFormat] = useState<"desktop" | "mobile">("desktop");
   const [customStyles, setCustomStyles] = useState({
     nameSize: 18,
@@ -129,86 +120,57 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       twitter: "",
       instagram: "",
       logoUrl: "",
-    },
+    }
   });
 
-  // Populate form when template data is loaded
-  useEffect(() => {
-    if (template && templateId) {
-      const content = (template as any)?.content || {};
-      form.reset({
-        name: (template as any)?.name || "",
-        status: ((template as any)?.status as "draft" | "active" | "archived") || "draft",
-        isShared: (template as any)?.isShared || false,
-        formatting: (template as any)?.formatting || "modern",
-        promotionalImage: (template as any)?.promotionalImage || "",
-        promotionalLink: (template as any)?.promotionalLink || "",
-        fullName: content.fullName || "",
-        jobTitle: content.jobTitle || "",
-        company: content.company || "",
-        email: content.email || "",
-        phone: content.phone || "",
-        website: content.website || "",
-        linkedIn: content.linkedIn || "",
-        twitter: content.twitter || "",
-        instagram: content.instagram || "",
-        logoUrl: content.logoUrl || "",
-      });
-    }
-  }, [template, templateId, form]);
-
-  const saveTemplateMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: async (data: TemplateFormData) => {
-      const templateData = {
-        name: data.name,
-        status: data.status,
-        isShared: data.isShared,
-        formatting: data.formatting,
-        promotionalImage: data.promotionalImage,
-        promotionalLink: data.promotionalLink,
-        content: {
-          fullName: data.fullName,
-          jobTitle: data.jobTitle,
-          company: data.company,
-          email: data.email,
-          phone: data.phone,
-          website: data.website,
-          linkedIn: data.linkedIn,
-          twitter: data.twitter,
-          instagram: data.instagram,
-          logoUrl: data.logoUrl,
-        },
-        htmlContent: generateHtmlContent(data),
-      };
-
-      if (templateId) {
-        return apiRequest(`/api/templates/${templateId}`, "PATCH", templateData);
-      } else {
-        return apiRequest("/api/templates", "POST", templateData);
-      }
+      const url = templateId ? `/api/templates/${templateId}` : '/api/templates';
+      const method = templateId ? 'PUT' : 'POST';
+      return apiRequest(url, { method, body: data });
     },
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: templateId ? "Template updated successfully!" : "Template created successfully!",
+      toast({ 
+        title: templateId ? "Template updated" : "Template created",
+        description: templateId ? "Your template has been updated successfully." : "Your new template has been created."
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
-      if (templateId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/templates/${templateId}`] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['/api/templates'] });
       setLocation("/templates");
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to save template",
-        variant: "destructive",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive"
       });
-    },
+    }
   });
 
+  useEffect(() => {
+    if (template) {
+      form.reset({
+        name: template.name,
+        status: template.status as "draft" | "active" | "archived",
+        isShared: template.isShared,
+        formatting: template.formatting,
+        promotionalImage: template.promotionalImage || "",
+        promotionalLink: template.promotionalLink || "",
+        fullName: template.fullName || "",
+        jobTitle: template.jobTitle || "",
+        company: template.company || "",
+        email: template.email || "",
+        phone: template.phone || "",
+        website: template.website || "",
+        linkedIn: template.linkedIn || "",
+        twitter: template.twitter || "",
+        instagram: template.instagram || "",
+        logoUrl: template.logoUrl || "",
+      });
+    }
+  }, [template, form]);
+
   const handleSave = (data: TemplateFormData) => {
-    saveTemplateMutation.mutate(data);
+    mutation.mutate(data);
   };
 
   const handleCancel = () => {
@@ -216,7 +178,6 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   };
 
   const generateInteractivePreview = (data: TemplateFormData) => {
-    
     return (
       <div style={{ fontFamily: customStyles.nameFont + ', sans-serif', lineHeight: 1.5, color: '#333333', padding: customStyles.padding + 'px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
@@ -254,7 +215,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 color: customStyles.nameColor, 
                 marginBottom: customStyles.spacing + 'px',
                 cursor: 'pointer',
-                padding: '2px 4px',
+                padding: '2px',
                 borderRadius: '4px',
                 border: editingElement === 'name' ? '2px solid #2563eb' : '2px solid transparent',
                 transition: 'all 0.2s'
@@ -269,9 +230,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 style={{ 
                   fontSize: customStyles.roleSize + 'px', 
                   color: customStyles.roleColor, 
-                  marginBottom: (customStyles.spacing/2) + 'px',
+                  marginBottom: customStyles.spacing * 0.5 + 'px',
                   cursor: 'pointer',
-                  padding: '2px 4px',
+                  padding: '2px',
                   borderRadius: '4px',
                   border: editingElement === 'role' ? '2px solid #2563eb' : '2px solid transparent',
                   transition: 'all 0.2s'
@@ -289,7 +250,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   color: customStyles.companyColor, 
                   marginBottom: customStyles.spacing + 'px',
                   cursor: 'pointer',
-                  padding: '2px 4px',
+                  padding: '2px',
                   borderRadius: '4px',
                   border: editingElement === 'company' ? '2px solid #2563eb' : '2px solid transparent',
                   transition: 'all 0.2s'
@@ -301,39 +262,37 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
             
             <div 
               onClick={() => setEditingElement(editingElement === 'contact' ? null : 'contact')}
-              style={{ 
-                fontSize: customStyles.contactSize + 'px', 
-                color: customStyles.contactColor,
+              style={{
                 cursor: 'pointer',
-                padding: '2px 4px',
+                padding: '2px',
                 borderRadius: '4px',
                 border: editingElement === 'contact' ? '2px solid #2563eb' : '2px solid transparent',
                 transition: 'all 0.2s'
               }}
             >
-              {data.email && <div style={{ marginBottom: '2px' }}><span style={{ color: customStyles.linkColor, textDecoration: 'none', cursor: 'default' }}>{data.email}</span></div>}
-              {data.phone && <div style={{ marginBottom: '2px' }}>{data.phone}</div>}
-              {data.website && <div style={{ marginBottom: '2px' }}><span style={{ color: customStyles.linkColor, textDecoration: 'none', cursor: 'default' }}>{data.website}</span></div>}
+              {data.email && (
+                <div style={{ fontSize: customStyles.contactSize + 'px', color: customStyles.contactColor, marginBottom: '2px' }}>
+                  📧 <span style={{ color: customStyles.linkColor }}>{data.email}</span>
+                </div>
+              )}
+              {data.phone && (
+                <div style={{ fontSize: customStyles.contactSize + 'px', color: customStyles.contactColor, marginBottom: '2px' }}>
+                  📞 {data.phone}
+                </div>
+              )}
+              {data.website && (
+                <div style={{ fontSize: customStyles.contactSize + 'px', color: customStyles.contactColor, marginBottom: '2px' }}>
+                  🌐 <span style={{ color: customStyles.linkColor }}>{data.website}</span>
+                </div>
+              )}
+              {(data.linkedIn || data.twitter || data.instagram) && (
+                <div style={{ fontSize: customStyles.contactSize + 'px', color: customStyles.contactColor, marginTop: '4px' }}>
+                  {data.linkedIn && <span style={{ marginRight: '8px', color: customStyles.linkColor }}>LinkedIn</span>}
+                  {data.twitter && <span style={{ marginRight: '8px', color: customStyles.linkColor }}>Twitter</span>}
+                  {data.instagram && <span style={{ color: customStyles.linkColor }}>Instagram</span>}
+                </div>
+              )}
             </div>
-            
-            {(data.linkedIn || data.twitter || data.instagram) && (
-              <div 
-                onClick={() => setEditingElement(editingElement === 'social' ? null : 'social')}
-                style={{ 
-                  marginTop: customStyles.spacing + 'px', 
-                  fontSize: customStyles.contactSize + 'px',
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                  borderRadius: '4px',
-                  border: editingElement === 'social' ? '2px solid #2563eb' : '2px solid transparent',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {data.linkedIn && <span style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px', cursor: 'default' }}>LinkedIn</span>}
-                {data.twitter && <span style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px', cursor: 'default' }}>Twitter</span>}
-                {data.instagram && <span style={{ color: customStyles.linkColor, textDecoration: 'none', cursor: 'default' }}>Instagram</span>}
-              </div>
-            )}
           </div>
         </div>
         
@@ -356,8 +315,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 maxWidth: '100%', 
                 height: customStyles.promoHeight + 'px', 
                 objectFit: 'cover',
-                border: 'none', 
-                cursor: 'default' 
+                border: 'none' 
               }} 
             />
           </div>
@@ -482,7 +440,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         custom: {
           container: `font-family: ${customStyles.nameFont}, sans-serif; line-height: 1.5; color: #333333; padding: ${customStyles.padding}px;`,
           name: `font-size: ${customStyles.nameSize}px; font-weight: 600; color: ${customStyles.nameColor}; margin-bottom: ${customStyles.spacing}px;`,
-          role: `font-size: ${customStyles.roleSize}px; color: ${customStyles.roleColor}; margin-bottom: ${customStyles.spacing/2}px;`,
+          role: `font-size: ${customStyles.roleSize}px; color: ${customStyles.roleColor}; margin-bottom: ${customStyles.spacing * 0.5}px;`,
           company: `font-size: ${customStyles.companySize}px; color: ${customStyles.companyColor}; margin-bottom: ${customStyles.spacing}px;`,
           contact: `font-size: ${customStyles.contactSize}px; color: ${customStyles.contactColor};`,
           link: `color: ${customStyles.linkColor}; text-decoration: none;`,
@@ -494,8 +452,8 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       return styles[formatting as keyof typeof styles] || styles.modern;
     };
 
-    const styles = getFormattingStyles(data.formatting || 'modern');
-    
+    const styles = getFormattingStyles(data.formatting);
+
     let signatureHtml = `
       <div style="${styles.container}">
         <table cellpadding="0" cellspacing="0" border="0">
@@ -506,25 +464,21 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               </td>
             ` : ''}
             <td style="vertical-align: top;">
-              <div style="${styles.name}">
-                ${data.fullName || 'Your Name'}
-              </div>
+              <div style="${styles.name}">${data.fullName || 'Your Name'}</div>
               ${data.jobTitle ? `<div style="${styles.role}">${data.jobTitle}</div>` : ''}
               ${data.company ? `<div style="${styles.company}">${data.company}</div>` : ''}
-              
               <div style="${styles.contact}">
-                ${data.email ? `<div style="margin-bottom: 2px;"><a href="mailto:${data.email}" style="${styles.link}">${data.email}</a></div>` : ''}
-                ${data.phone ? `<div style="margin-bottom: 2px;">${data.phone}</div>` : ''}
-                ${data.website ? `<div style="margin-bottom: 2px;"><a href="${data.website}" style="${styles.link}">${data.website}</a></div>` : ''}
+                ${data.email ? `<div style="margin-bottom: 2px;">📧 <a href="mailto:${data.email}" style="${styles.link}">${data.email}</a></div>` : ''}
+                ${data.phone ? `<div style="margin-bottom: 2px;">📞 ${data.phone}</div>` : ''}
+                ${data.website ? `<div style="margin-bottom: 2px;">🌐 <a href="${data.website}" style="${styles.link}">${data.website}</a></div>` : ''}
+                ${(data.linkedIn || data.twitter || data.instagram) ? `
+                  <div style="${styles.social}">
+                    ${data.linkedIn ? `<a href="${data.linkedIn}" style="${styles.link}; margin-right: 8px;">LinkedIn</a>` : ''}
+                    ${data.twitter ? `<a href="${data.twitter}" style="${styles.link}; margin-right: 8px;">Twitter</a>` : ''}
+                    ${data.instagram ? `<a href="${data.instagram}" style="${styles.link};">Instagram</a>` : ''}
+                  </div>
+                ` : ''}
               </div>
-              
-              ${(data.linkedIn || data.twitter || data.instagram) ? `
-                <div style="${styles.social}">
-                  ${data.linkedIn ? `<a href="${data.linkedIn}" style="${styles.link}; margin-right: 10px;">LinkedIn</a>` : ''}
-                  ${data.twitter ? `<a href="${data.twitter}" style="${styles.link}; margin-right: 10px;">Twitter</a>` : ''}
-                  ${data.instagram ? `<a href="${data.instagram}" style="${styles.link};">Instagram</a>` : ''}
-                </div>
-              ` : ''}
             </td>
           </tr>
         </table>
@@ -547,28 +501,155 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     return signatureHtml;
   };
 
+  const renderStyleControls = () => {
+    if (!editingElement || form.watch("formatting") !== "custom") {
+      return null;
+    }
+
+    return (
+      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-medium text-sm text-blue-900">
+            Editing: {editingElement === 'name' ? 'Name' : 
+                      editingElement === 'role' ? 'Job Title' : 
+                      editingElement === 'company' ? 'Company' : 
+                      editingElement === 'contact' ? 'Contact' : 
+                      editingElement === 'logo' ? 'Image' :
+                      editingElement === 'promo' ? 'Promotional Image' : 'Element'}
+          </h4>
+          <button
+            type="button"
+            onClick={() => setEditingElement(null)}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          {/* Text Element Controls */}
+          {(editingElement === 'name' || editingElement === 'role' || editingElement === 'company' || editingElement === 'contact') && (
+            <>
+              <div>
+                <Label className="text-xs text-blue-700">
+                  Size: {editingElement === 'name' ? customStyles.nameSize : 
+                         editingElement === 'role' ? customStyles.roleSize : 
+                         editingElement === 'company' ? customStyles.companySize : customStyles.contactSize}px
+                </Label>
+                <input
+                  type="range"
+                  min="10"
+                  max="32"
+                  value={editingElement === 'name' ? customStyles.nameSize : 
+                         editingElement === 'role' ? customStyles.roleSize : 
+                         editingElement === 'company' ? customStyles.companySize : customStyles.contactSize}
+                  onChange={(e) => {
+                    const newSize = parseInt(e.target.value);
+                    if (editingElement === 'name') setCustomStyles({...customStyles, nameSize: newSize});
+                    else if (editingElement === 'role') setCustomStyles({...customStyles, roleSize: newSize});
+                    else if (editingElement === 'company') setCustomStyles({...customStyles, companySize: newSize});
+                    else if (editingElement === 'contact') setCustomStyles({...customStyles, contactSize: newSize});
+                  }}
+                  className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-blue-700">Color</Label>
+                <input
+                  type="color"
+                  value={editingElement === 'name' ? customStyles.nameColor : 
+                         editingElement === 'role' ? customStyles.roleColor : 
+                         editingElement === 'company' ? customStyles.companyColor : customStyles.contactColor}
+                  onChange={(e) => {
+                    const newColor = e.target.value;
+                    if (editingElement === 'name') setCustomStyles({...customStyles, nameColor: newColor});
+                    else if (editingElement === 'role') setCustomStyles({...customStyles, roleColor: newColor});
+                    else if (editingElement === 'company') setCustomStyles({...customStyles, companyColor: newColor});
+                    else if (editingElement === 'contact') setCustomStyles({...customStyles, contactColor: newColor});
+                  }}
+                  className="w-full h-8 border border-blue-300 rounded cursor-pointer"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs text-blue-700">Font</Label>
+                <Select 
+                  value={editingElement === 'name' ? customStyles.nameFont : 'Arial'} 
+                  onValueChange={(value) => {
+                    if (editingElement === 'name') setCustomStyles({...customStyles, nameFont: value});
+                  }}
+                >
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Arial">Arial</SelectItem>
+                    <SelectItem value="Georgia">Georgia</SelectItem>
+                    <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                    <SelectItem value="Helvetica">Helvetica</SelectItem>
+                    <SelectItem value="Calibri">Calibri</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+          
+          {/* Logo/Image Controls */}
+          {editingElement === 'logo' && (
+            <div>
+              <Label className="text-xs text-blue-700">Corner Radius: {customStyles.logoRadius}px</Label>
+              <input
+                type="range"
+                min="0"
+                max="20"
+                value={customStyles.logoRadius}
+                onChange={(e) => setCustomStyles({...customStyles, logoRadius: parseInt(e.target.value)})}
+                className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          )}
+          
+          {/* Promotional Image Controls */}
+          {editingElement === 'promo' && (
+            <div>
+              <Label className="text-xs text-blue-700">Height: {customStyles.promoHeight}px</Label>
+              <input
+                type="range"
+                min="40"
+                max="200"
+                value={customStyles.promoHeight}
+                onChange={(e) => setCustomStyles({...customStyles, promoHeight: parseInt(e.target.value)})}
+                className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          )}
+          
+          {/* Spacing Control for all elements */}
+          <div>
+            <Label className="text-xs text-blue-700">Spacing: {customStyles.spacing}px</Label>
+            <input
+              type="range"
+              min="2"
+              max="20"
+              value={customStyles.spacing}
+              onChange={(e) => setCustomStyles({...customStyles, spacing: parseInt(e.target.value)})}
+              className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
-        
         <div className="flex flex-col flex-1 overflow-hidden">
           <TopBar title="Loading..." />
-          
           <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-            <div className="max-w-6xl mx-auto">
-              <Skeleton className="h-8 w-48 mb-4" />
-              <Skeleton className="h-48 w-full mb-6" />
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-32" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </CardContent>
-              </Card>
+            <div className="max-w-6xl mx-auto space-y-6">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-96 w-full" />
             </div>
           </main>
         </div>
@@ -619,424 +700,288 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                     </SelectContent>
                   </Select>
                   
-                  <Button onClick={form.handleSubmit(handleSave)} disabled={saveTemplateMutation.isPending}>
+                  <Button
+                    type="submit"
+                    disabled={mutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={form.handleSubmit(handleSave)}
+                  >
                     <Save className="h-4 w-4 mr-2" />
-                    {saveTemplateMutation.isPending ? "Saving..." : "Save Template"}
+                    {templateId ? 'Update' : 'Save'}
                   </Button>
                 </div>
               </div>
             </div>
 
-            {/* Preview Panel - Full Width */}
-            <Card className="mb-6">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle>Live Preview</CardTitle>
-                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                  <Button
-                    type="button"
-                    variant={previewFormat === "desktop" ? "default" : "ghost"}
-                    size="sm"
-                    className="h-8 px-3"
-                    onClick={() => setPreviewFormat("desktop")}
-                  >
-                    <Monitor className="h-4 w-4 mr-1" />
-                    Desktop
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={previewFormat === "mobile" ? "default" : "ghost"}
-                    size="sm"
-                    className="h-8 px-3"
-                    onClick={() => setPreviewFormat("mobile")}
-                  >
-                    <Smartphone className="h-4 w-4 mr-1" />
-                    Mobile
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className={`signature-preview bg-white border rounded p-4 min-h-32 ${
-                  previewFormat === "mobile" 
-                    ? "max-w-sm mx-auto" 
-                    : "w-full"
-                }`}>
-                  {form.watch("formatting") === "custom" ? (
-                    <div className={previewFormat === "mobile" ? "text-sm" : ""}>
-                      {generateInteractivePreview(formData)}
-                    </div>
-                  ) : (
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: generateHtmlContent(formData) }} 
-                      className={previewFormat === "mobile" ? "text-sm" : ""}
-                    />
-                  )}
-                </div>
-                
-                {/* Compact Style Editor - appears when element is clicked */}
-                {editingElement && form.watch("formatting") === "custom" && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-sm text-blue-900">
-                        Editing: {editingElement === 'name' ? 'Name' : 
-                                 editingElement === 'role' ? 'Job Title' : 
-                                 editingElement === 'company' ? 'Company' : 
-                                 editingElement === 'contact' ? 'Contact Info' : 
-                                 editingElement === 'social' ? 'Social Links' :
-                                 editingElement === 'logo' ? 'Logo/Image' : 'Promotional Image'}
-                      </h4>
-                      <button 
-                        onClick={() => setEditingElement(null)}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
+            {/* Main Layout: Preview (2/3) + Editor (1/3) */}
+            <div className="flex gap-6">
+              {/* Left Column - Preview (2/3 width) */}
+              <div className="flex-1" style={{ flex: '2' }}>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle>Live Preview</CardTitle>
+                    <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                      <Button
+                        type="button"
+                        variant={previewFormat === "desktop" ? "default" : "ghost"}
+                        size="sm"
+                        className="h-8 px-3"
+                        onClick={() => setPreviewFormat("desktop")}
                       >
-                        ✕
-                      </button>
+                        <Monitor className="h-4 w-4 mr-1" />
+                        Desktop
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={previewFormat === "mobile" ? "default" : "ghost"}
+                        size="sm"
+                        className="h-8 px-3"
+                        onClick={() => setPreviewFormat("mobile")}
+                      >
+                        <Smartphone className="h-4 w-4 mr-1" />
+                        Mobile
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`signature-preview bg-white border rounded p-4 min-h-32 ${
+                      previewFormat === "mobile" 
+                        ? "max-w-sm mx-auto" 
+                        : "w-full"
+                    }`}>
+                      {form.watch("formatting") === "custom" ? (
+                        <div className={previewFormat === "mobile" ? "text-sm" : ""}>
+                          {generateInteractivePreview(formData)}
+                        </div>
+                      ) : (
+                        <div 
+                          dangerouslySetInnerHTML={{ __html: generateHtmlContent(formData) }} 
+                          className={previewFormat === "mobile" ? "text-sm" : ""}
+                        />
+                      )}
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Text Element Controls */}
-                      {(editingElement === 'name' || editingElement === 'role' || editingElement === 'company' || editingElement === 'contact') && (
-                        <>
-                          <div>
-                            <Label className="text-xs text-blue-700">
-                              Size: {editingElement === 'name' ? customStyles.nameSize : 
-                                     editingElement === 'role' ? customStyles.roleSize : 
-                                     editingElement === 'company' ? customStyles.companySize : customStyles.contactSize}px
-                            </Label>
-                            <input
-                              type="range"
-                              min="10"
-                              max={editingElement === 'name' ? "32" : "24"}
-                              value={editingElement === 'name' ? customStyles.nameSize : 
-                                     editingElement === 'role' ? customStyles.roleSize : 
-                                     editingElement === 'company' ? customStyles.companySize : customStyles.contactSize}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value);
-                                if (editingElement === 'name') setCustomStyles({...customStyles, nameSize: value});
-                                else if (editingElement === 'role') setCustomStyles({...customStyles, roleSize: value});
-                                else if (editingElement === 'company') setCustomStyles({...customStyles, companySize: value});
-                                else setCustomStyles({...customStyles, contactSize: value});
-                              }}
-                              className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
-                            />
+                    {/* Compact Style Editor - appears when element is clicked */}
+                    {renderStyleControls()}
+
+                    {/* Style Selection */}
+                    <div className="mt-4 flex overflow-x-auto space-x-3 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                      {FORMATTING_OPTIONS.map((option) => (
+                        <div
+                          key={option.value}
+                          className={`flex-shrink-0 flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-sm ${
+                            form.watch("formatting") === option.value
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                          onClick={() => form.setValue("formatting", option.value)}
+                        >
+                          <div className={`w-8 h-8 rounded-lg ${option.color} flex items-center justify-center text-white text-lg`}>
+                            {option.icon}
                           </div>
-                          <div>
-                            <Label className="text-xs text-blue-700">Color</Label>
-                            <input
-                              type="color"
-                              value={editingElement === 'name' ? customStyles.nameColor : 
-                                     editingElement === 'role' ? customStyles.roleColor : 
-                                     editingElement === 'company' ? customStyles.companyColor : customStyles.contactColor}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (editingElement === 'name') setCustomStyles({...customStyles, nameColor: value});
-                                else if (editingElement === 'role') setCustomStyles({...customStyles, roleColor: value});
-                                else if (editingElement === 'company') setCustomStyles({...customStyles, companyColor: value});
-                                else setCustomStyles({...customStyles, contactColor: value});
-                              }}
-                              className="w-full h-8 rounded border border-blue-300"
-                            />
-                          </div>
-                        </>
-                      )}
-                      
-                      {/* Link Color Controls */}
-                      {(editingElement === 'contact' || editingElement === 'social') && (
-                        <div>
-                          <Label className="text-xs text-blue-700">Link Color</Label>
-                          <input
-                            type="color"
-                            value={customStyles.linkColor}
-                            onChange={(e) => setCustomStyles({...customStyles, linkColor: e.target.value})}
-                            className="w-full h-8 rounded border border-blue-300"
-                          />
+                          <span className="text-sm font-medium text-gray-900 whitespace-nowrap">{option.label}</span>
                         </div>
-                      )}
-                      
-                      {/* Logo/Image Controls */}
-                      {editingElement === 'logo' && (
-                        <div>
-                          <Label className="text-xs text-blue-700">Corner Radius: {customStyles.logoRadius}px</Label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="20"
-                            value={customStyles.logoRadius}
-                            onChange={(e) => setCustomStyles({...customStyles, logoRadius: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Promotional Image Controls */}
-                      {editingElement === 'promo' && (
-                        <div>
-                          <Label className="text-xs text-blue-700">Height: {customStyles.promoHeight}px</Label>
-                          <input
-                            type="range"
-                            min="40"
-                            max="200"
-                            value={customStyles.promoHeight}
-                            onChange={(e) => setCustomStyles({...customStyles, promoHeight: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Spacing Control for all elements */}
-                      <div>
-                        <Label className="text-xs text-blue-700">Spacing: {customStyles.spacing}px</Label>
-                        <input
-                          type="range"
-                          min="2"
-                          max="20"
-                          value={customStyles.spacing}
-                          onChange={(e) => setCustomStyles({...customStyles, spacing: parseInt(e.target.value)})}
-                          className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                      </div>
+                      ))}
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Style Selection */}
-            <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-              {FORMATTING_OPTIONS.map((option) => (
-                <div
-                  key={option.value}
-                  className={`flex-shrink-0 flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-sm ${
-                    form.watch("formatting") === option.value
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 bg-white hover:border-gray-300"
-                  }`}
-                  onClick={() => form.setValue("formatting", option.value)}
-                >
-                  <div className={`w-8 h-8 rounded-lg ${option.color} flex items-center justify-center text-white text-lg`}>
-                    {option.icon}
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 whitespace-nowrap">{option.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Interactive Styling Hint */}
-            {form.watch("formatting") === "custom" && !editingElement && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <span className="font-medium">💡 Tip:</span> Click any element in the preview above to customize its style (size, color, spacing)
-                </p>
+                    {/* Interactive Styling Hint */}
+                    {form.watch("formatting") === "custom" && !editingElement && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          <span className="font-medium">💡 Tip:</span> Click any element in the preview above to customize its style (size, color, spacing)
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
-            )}
 
-            {/* Signature Editor */}
-            <form onSubmit={form.handleSubmit(handleSave)}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Signature Editor</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                      <TabsTrigger value="contact">Contact</TabsTrigger>
-                      <TabsTrigger value="social">Social</TabsTrigger>
-                      <TabsTrigger value="promotional">Promotion</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="basic" className="space-y-4 mt-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="fullName">Full Name</Label>
-                          <Input
-                            id="fullName"
-                            {...form.register("fullName")}
-                            placeholder="John Doe"
-                          />
-                          {form.formState.errors.fullName && (
-                            <p className="text-sm text-red-600">{form.formState.errors.fullName.message}</p>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="jobTitle">Job Title</Label>
-                          <Input
-                            id="jobTitle"
-                            {...form.register("jobTitle")}
-                            placeholder="Senior Marketing Manager"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="company">Company</Label>
-                          <Input
-                            id="company"
-                            {...form.register("company")}
-                            placeholder="Acme Corporation"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="logoUrl">Image</Label>
-                          <div className="flex space-x-2">
+              {/* Right Column - Signature Editor (1/3 width) */}
+              <div className="w-1/3">
+                <form onSubmit={form.handleSubmit(handleSave)}>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Signature Editor</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Basic Information Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+                          Basic Information
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="fullName" className="text-sm">Full Name</Label>
                             <Input
-                              id="logoUrl"
-                              {...form.register("logoUrl")}
-                              placeholder="https://example.com/image.png"
-                              className="flex-1"
+                              id="fullName"
+                              {...form.register("fullName")}
+                              placeholder="John Doe"
+                              className="text-sm"
                             />
-                            <Button type="button" variant="outline" size="icon">
-                              <Upload className="h-4 w-4" />
-                            </Button>
+                            {form.formState.errors.fullName && (
+                              <p className="text-sm text-red-600">{form.formState.errors.fullName.message}</p>
+                            )}
                           </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="contact" className="space-y-4 mt-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email Address</Label>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <div className="space-y-2">
+                            <Label htmlFor="jobTitle" className="text-sm">Job Title</Label>
                             <Input
-                              id="email"
-                              className="pl-10"
-                              {...form.register("email")}
-                              placeholder="john.doe@company.com"
+                              id="jobTitle"
+                              {...form.register("jobTitle")}
+                              placeholder="Marketing Manager"
+                              className="text-sm"
                             />
                           </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Phone Number</Label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <div className="space-y-2">
+                            <Label htmlFor="company" className="text-sm">Company</Label>
                             <Input
-                              id="phone"
-                              className="pl-10"
-                              {...form.register("phone")}
-                              placeholder="+1 (555) 123-4567"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="website">Website</Label>
-                          <div className="relative">
-                            <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="website"
-                              className="pl-10"
-                              {...form.register("website")}
-                              placeholder="https://company.com"
+                              id="company"
+                              {...form.register("company")}
+                              placeholder="Acme Corp"
+                              className="text-sm"
                             />
                           </div>
                         </div>
                       </div>
-                    </TabsContent>
 
-                    <TabsContent value="social" className="space-y-4 mt-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="linkedIn">LinkedIn Profile</Label>
-                          <div className="relative">
-                            <Linkedin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="linkedIn"
-                              className="pl-10"
-                              {...form.register("linkedIn")}
-                              placeholder="https://linkedin.com/in/johndoe"
-                            />
+                      {/* Contact Information Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+                          Contact Information
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="email" className="text-sm">Email Address</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Input
+                                id="email"
+                                className="pl-10 text-sm"
+                                {...form.register("email")}
+                                placeholder="john.doe@company.com"
+                              />
+                            </div>
+                            {form.formState.errors.email && (
+                              <p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
+                            )}
                           </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="twitter">Twitter Profile</Label>
-                          <div className="relative">
-                            <Twitter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="twitter"
-                              className="pl-10"
-                              {...form.register("twitter")}
-                              placeholder="https://twitter.com/johndoe"
-                            />
+                          <div className="space-y-2">
+                            <Label htmlFor="phone" className="text-sm">Phone Number</Label>
+                            <div className="relative">
+                              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Input
+                                id="phone"
+                                className="pl-10 text-sm"
+                                {...form.register("phone")}
+                                placeholder="+1 (555) 123-4567"
+                              />
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="instagram">Instagram Profile</Label>
-                          <div className="relative">
-                            <Instagram className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="instagram"
-                              className="pl-10"
-                              {...form.register("instagram")}
-                              placeholder="https://instagram.com/johndoe"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-
-                    {/* Promotional Tab */}
-                    <TabsContent value="promotional" className="space-y-4">
-                      <div>
-                        <Label htmlFor="promotional-image">Promotional Image URL</Label>
-                        <div className="mt-1">
-                          <Input
-                            id="promotional-image"
-                            {...form.register("promotionalImage")}
-                            placeholder="https://example.com/promo-banner.jpg"
-                          />
-                          <p className="text-sm text-gray-500 mt-1">
-                            Add a promotional image that will appear below your signature
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="promotional-link">Promotional Link</Label>
-                        <div className="mt-1">
-                          <Input
-                            id="promotional-link"
-                            {...form.register("promotionalLink")}
-                            placeholder="https://example.com/special-offer"
-                          />
-                          <p className="text-sm text-gray-500 mt-1">
-                            The promotional image will link to this URL when clicked
-                          </p>
-                        </div>
-                        {form.formState.errors.promotionalLink && (
-                          <p className="text-sm text-red-600 mt-1">{form.formState.errors.promotionalLink.message}</p>
-                        )}
-                      </div>
-
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div className="ml-3">
-                            <h3 className="text-sm font-medium text-blue-800">Promotional Image Tips</h3>
-                            <div className="mt-2 text-sm text-blue-700">
-                              <ul className="list-disc list-inside space-y-1">
-                                <li>Use high-quality images (recommended: 600x200px)</li>
-                                <li>Keep file size under 1MB for better email delivery</li>
-                                <li>Test the image URL before saving</li>
-                                <li>Ensure the promotional link works correctly</li>
-                              </ul>
+                          <div className="space-y-2">
+                            <Label htmlFor="website" className="text-sm">Website</Label>
+                            <div className="relative">
+                              <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Input
+                                id="website"
+                                className="pl-10 text-sm"
+                                {...form.register("website")}
+                                placeholder="https://company.com"
+                              />
                             </div>
                           </div>
                         </div>
                       </div>
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            </form>
+
+                      {/* Social Media Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+                          Social Media
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="linkedIn" className="text-sm">LinkedIn Profile</Label>
+                            <div className="relative">
+                              <Linkedin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Input
+                                id="linkedIn"
+                                className="pl-10 text-sm"
+                                {...form.register("linkedIn")}
+                                placeholder="https://linkedin.com/in/johndoe"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="twitter" className="text-sm">Twitter Profile</Label>
+                            <div className="relative">
+                              <Twitter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Input
+                                id="twitter"
+                                className="pl-10 text-sm"
+                                {...form.register("twitter")}
+                                placeholder="https://twitter.com/johndoe"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="instagram" className="text-sm">Instagram Profile</Label>
+                            <div className="relative">
+                              <Instagram className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Input
+                                id="instagram"
+                                className="pl-10 text-sm"
+                                {...form.register("instagram")}
+                                placeholder="https://instagram.com/johndoe"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Assets Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+                          Assets
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="logoUrl" className="text-sm">Company Logo URL</Label>
+                            <Input
+                              id="logoUrl"
+                              placeholder="https://example.com/logo.png"
+                              className="text-sm"
+                              {...form.register("logoUrl")}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="promotional-image" className="text-sm">Promotional Image URL</Label>
+                            <Input
+                              id="promotional-image"
+                              {...form.register("promotionalImage")}
+                              placeholder="https://example.com/promo-banner.jpg"
+                              className="text-sm"
+                            />
+                            <p className="text-xs text-gray-500">
+                              Add a promotional image that will appear below your signature
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="promotional-link" className="text-sm">Promotional Link</Label>
+                            <Input
+                              id="promotional-link"
+                              {...form.register("promotionalLink")}
+                              placeholder="https://company.com/promotion"
+                              className="text-sm"
+                            />
+                            <p className="text-xs text-gray-500">
+                              Make the promotional image clickable (optional)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </form>
+              </div>
+            </div>
           </div>
         </main>
       </div>
