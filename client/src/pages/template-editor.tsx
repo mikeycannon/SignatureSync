@@ -40,9 +40,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const templateFormSchema = insertSignatureTemplateSchema.extend({
-  // Signature data fields
+// Schema for form data (includes signature fields)
+const templateFormSchema = z.object({
+  // Template metadata
   name: z.string().min(1, "Template name is required"),
+  status: z.enum(["draft", "active", "archived"]).default("draft"),
+  isShared: z.boolean().default(false),
+  
+  // Signature data fields
   fullName: z.string().min(1, "Full name is required"),
   jobTitle: z.string().min(1, "Job title is required"),
   company: z.string().min(1, "Company is required"),
@@ -69,7 +74,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: template, isLoading } = useQuery({
+  const { data: template, isLoading } = useQuery<SignatureTemplate>({
     queryKey: ["/api/templates", templateId],
     enabled: !!templateId,
   });
@@ -96,21 +101,21 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   // Populate form when template data is loaded
   useEffect(() => {
     if (template && templateId) {
-      const content = template.content as any;
+      const content = (template as any)?.content || {};
       form.reset({
-        name: template.name,
-        status: template.status,
-        isShared: template.isShared,
-        fullName: content?.fullName || "",
-        jobTitle: content?.jobTitle || "",
-        company: content?.company || "",
-        email: content?.email || "",
-        phone: content?.phone || "",
-        website: content?.website || "",
-        linkedIn: content?.linkedIn || "",
-        twitter: content?.twitter || "",
-        instagram: content?.instagram || "",
-        logoUrl: content?.logoUrl || "",
+        name: (template as any)?.name || "",
+        status: ((template as any)?.status as "draft" | "active" | "archived") || "draft",
+        isShared: (template as any)?.isShared || false,
+        fullName: content.fullName || "",
+        jobTitle: content.jobTitle || "",
+        company: content.company || "",
+        email: content.email || "",
+        phone: content.phone || "",
+        website: content.website || "",
+        linkedIn: content.linkedIn || "",
+        twitter: content.twitter || "",
+        instagram: content.instagram || "",
+        logoUrl: content.logoUrl || "",
       });
     }
   }, [template, templateId, form]);
