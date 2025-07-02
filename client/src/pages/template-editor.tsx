@@ -985,7 +985,6 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               </div>
             </div>
           </div>
-          </div>
         </main>
       </div>
     </div>
