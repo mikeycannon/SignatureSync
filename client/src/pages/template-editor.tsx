@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -144,6 +144,10 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     promoHeight: 80
   });
   const [editingElement, setEditingElement] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingPromo, setUploadingPromo] = useState(false);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const promoFileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -187,6 +191,95 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       form.setValue("name", newTemplateName);
     }
   }, [allTemplates, templateId, form]);
+
+  // Upload mutations for logo and promo images
+  const uploadImageMutation = useMutation({
+    mutationFn: async ({ file, type }: { file: File; type: 'logo' | 'promo' }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', file.name);
+
+      const response = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      const { type } = variables;
+      const assetUrl = data.url;
+      
+      if (type === 'logo') {
+        form.setValue('logoUrl', assetUrl);
+        setUploadingLogo(false);
+      } else {
+        form.setValue('promotionalImage', assetUrl);
+        setUploadingPromo(false);
+      }
+      
+      toast({
+        title: "Image uploaded",
+        description: "Your image has been uploaded successfully.",
+      });
+    },
+    onError: (error: any, variables) => {
+      const { type } = variables;
+      if (type === 'logo') {
+        setUploadingLogo(false);
+      } else {
+        setUploadingPromo(false);
+      }
+      
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload image",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // File upload handlers
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      setUploadingLogo(true);
+      uploadImageMutation.mutate({ file, type: 'logo' });
+    }
+  };
+
+  const handlePromoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      setUploadingPromo(true);
+      uploadImageMutation.mutate({ file, type: 'promo' });
+    }
+  };
 
   const mutation = useMutation({
     mutationFn: async (data: TemplateFormData) => {
@@ -1030,28 +1123,92 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         </h3>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2 col-span-2">
-                            <Label htmlFor="logoUrl" className="text-sm">Company Logo URL</Label>
-                            <Input
-                              id="logoUrl"
-                              placeholder="https://example.com/logo.png"
-                              className="text-sm"
-                              {...form.register("logoUrl")}
+                            <Label className="text-sm">Company Logo</Label>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => logoFileInputRef.current?.click()}
+                                disabled={uploadingLogo}
+                                className="flex-1"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {uploadingLogo ? "Uploading..." : form.watch("logoUrl") ? "Change Logo" : "Upload Logo"}
+                              </Button>
+                              {form.watch("logoUrl") && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => form.setValue("logoUrl", "")}
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            <input
+                              ref={logoFileInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              className="hidden"
                             />
+                            {form.watch("logoUrl") && (
+                              <div className="mt-2">
+                                <img 
+                                  src={form.watch("logoUrl")} 
+                                  alt="Logo preview" 
+                                  className="h-16 object-contain border rounded"
+                                />
+                              </div>
+                            )}
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="promotional-image" className="text-sm">Promotional Image URL</Label>
-                            <Input
-                              id="promotional-image"
-                              {...form.register("promotionalImage")}
-                              placeholder="https://example.com/promo-banner.jpg"
-                              className="text-sm"
+                            <Label className="text-sm">Promo Image</Label>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => promoFileInputRef.current?.click()}
+                                disabled={uploadingPromo}
+                                className="flex-1"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {uploadingPromo ? "Uploading..." : form.watch("promotionalImage") ? "Change Image" : "Upload Image"}
+                              </Button>
+                              {form.watch("promotionalImage") && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => form.setValue("promotionalImage", "")}
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            <input
+                              ref={promoFileInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePromoUpload}
+                              className="hidden"
                             />
                             <p className="text-xs text-gray-500">
-                              Add a promotional image that will appear below your signature
+                              Add a promo image that will appear below your signature
                             </p>
+                            {form.watch("promotionalImage") && (
+                              <div className="mt-2">
+                                <img 
+                                  src={form.watch("promotionalImage")} 
+                                  alt="Promo preview" 
+                                  className="h-16 object-contain border rounded"
+                                />
+                              </div>
+                            )}
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="promotional-link" className="text-sm">Promotional Link</Label>
+                            <Label htmlFor="promotional-link" className="text-sm">Promo Link</Label>
                             <Input
                               id="promotional-link"
                               {...form.register("promotionalLink")}
@@ -1059,7 +1216,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                               className="text-sm"
                             />
                             <p className="text-xs text-gray-500">
-                              Make the promotional image clickable (optional)
+                              Make the promo image clickable (optional)
                             </p>
                           </div>
                         </div>
