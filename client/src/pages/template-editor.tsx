@@ -455,7 +455,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className={`signature-preview bg-white border rounded p-4 h-48 ${
+                <div className={`signature-preview bg-white border rounded p-4 min-h-32 ${
                   previewFormat === "mobile" 
                     ? "max-w-sm mx-auto" 
                     : "w-full"
@@ -468,6 +468,55 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               </CardContent>
             </Card>
 
+            {/* Style Selection Carousel */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Choose Your Style</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                    {FORMATTING_OPTIONS.map((option) => (
+                      <div
+                        key={option.value}
+                        className={`flex-shrink-0 w-56 p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                          form.watch("formatting") === option.value
+                            ? "border-blue-500 bg-blue-50 shadow-md"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                        onClick={() => form.setValue("formatting", option.value)}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold text-sm">{option.label}</h3>
+                          {form.watch("formatting") === option.value && (
+                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 mb-3 h-8">{option.description}</p>
+                        <div className="bg-white border rounded-md p-3 overflow-hidden" style={{ height: '120px' }}>
+                          <div 
+                            dangerouslySetInnerHTML={{ 
+                              __html: generateHtmlContent({...formData, formatting: option.value}) 
+                            }}
+                            className="transform scale-50 origin-top-left text-xs"
+                            style={{ width: '200%' }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2 flex items-center">
+                    <span>Scroll horizontally to see all styles</span>
+                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Signature Editor */}
             <form onSubmit={form.handleSubmit(handleSave)}>
               <Card>
@@ -476,11 +525,10 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-4">
                       <TabsTrigger value="basic">Basic Info</TabsTrigger>
                       <TabsTrigger value="contact">Contact</TabsTrigger>
                       <TabsTrigger value="social">Social</TabsTrigger>
-                      <TabsTrigger value="formatting">Style</TabsTrigger>
                       <TabsTrigger value="promotional">Promotion</TabsTrigger>
                     </TabsList>
 
@@ -616,28 +664,6 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                             />
                           </div>
                         </div>
-                      </div>
-                    </TabsContent>
-
-                    {/* Formatting Tab */}
-                    <TabsContent value="formatting" className="space-y-4">
-                      <div>
-                        <Label htmlFor="formatting">Signature Style</Label>
-                        <Select value={form.watch("formatting")} onValueChange={(value) => form.setValue("formatting", value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a formatting style" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {FORMATTING_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                <div>
-                                  <div className="font-medium">{option.label}</div>
-                                  <div className="text-sm text-gray-500">{option.description}</div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </div>
                     </TabsContent>
 
