@@ -49,9 +49,9 @@ const templateFormSchema = z.object({
   
   // Signature data fields
   fullName: z.string().min(1, "Full name is required"),
-  jobTitle: z.string().min(1, "Job title is required"),
-  company: z.string().min(1, "Company is required"),
-  email: z.string().email("Valid email is required"),
+  jobTitle: z.string().optional(),
+  company: z.string().optional(),
+  email: z.string().optional(),
   phone: z.string().optional(),
   website: z.string().optional(),
   linkedIn: z.string().optional(),
@@ -122,7 +122,6 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
 
   const saveTemplateMutation = useMutation({
     mutationFn: async (data: TemplateFormData) => {
-      console.log("Mutation data:", data);
       const { name, status, isShared, ...signatureData } = data;
       
       const templateData = {
@@ -132,9 +131,6 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         content: signatureData,
         htmlContent: generateHtmlContent(signatureData),
       };
-
-      console.log("Template data to send:", templateData);
-      console.log("API endpoint:", templateId ? `PUT /api/templates/${templateId}` : "POST /api/templates");
 
       if (templateId) {
         return await apiRequest("PUT", `/api/templates/${templateId}`, templateData);
@@ -233,19 +229,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   };
 
   const handleSave = (data: TemplateFormData) => {
-    console.log("Form data:", data);
-    console.log("Form errors:", form.formState.errors);
-    console.log("Form valid:", form.formState.isValid);
-    console.log("Form dirty:", form.formState.isDirty);
     saveTemplateMutation.mutate(data);
-  };
-
-  const handleButtonClick = () => {
-    console.log("Button clicked");
-    console.log("Form state:", form.formState);
-    console.log("Form values:", form.getValues());
-    console.log("Form errors:", form.formState.errors);
-    form.handleSubmit(handleSave)();
   };
 
   const handleCancel = () => {
@@ -320,7 +304,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   <Eye className="h-4 w-4 mr-2" />
                   {previewMode ? "Edit" : "Preview"}
                 </Button>
-                <Button onClick={handleButtonClick} disabled={saveTemplateMutation.isPending}>
+                <Button onClick={form.handleSubmit(handleSave)} disabled={saveTemplateMutation.isPending}>
                   <Save className="h-4 w-4 mr-2" />
                   {saveTemplateMutation.isPending ? "Saving..." : "Save Template"}
                 </Button>
