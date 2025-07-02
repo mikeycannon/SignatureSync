@@ -96,7 +96,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     contactColor: "#333333",
     linkColor: "#2563eb",
     spacing: 8,
-    padding: 0
+    padding: 0,
+    logoRadius: 0,
+    promoHeight: 80
   });
   const [editingElement, setEditingElement] = useState<string | null>(null);
   
@@ -219,8 +221,28 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       <div style={{ fontFamily: customStyles.nameFont + ', sans-serif', lineHeight: 1.5, color: '#333333', padding: customStyles.padding + 'px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
           {data.logoUrl && (
-            <div style={{ paddingRight: '20px', verticalAlign: 'top' }}>
-              <img src={data.logoUrl} alt="Image" style={{ height: '80px', maxWidth: '200px', objectFit: 'contain' }} />
+            <div 
+              onClick={() => setEditingElement(editingElement === 'logo' ? null : 'logo')}
+              style={{ 
+                paddingRight: '20px', 
+                verticalAlign: 'top',
+                cursor: 'pointer',
+                padding: '2px',
+                borderRadius: '4px',
+                border: editingElement === 'logo' ? '2px solid #2563eb' : '2px solid transparent',
+                transition: 'all 0.2s'
+              }}
+            >
+              <img 
+                src={data.logoUrl} 
+                alt="Image" 
+                style={{ 
+                  height: '80px', 
+                  maxWidth: '200px', 
+                  objectFit: 'contain',
+                  borderRadius: customStyles.logoRadius + 'px'
+                }} 
+              />
             </div>
           )}
           <div style={{ verticalAlign: 'top' }}>
@@ -316,8 +338,28 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         </div>
         
         {data.promotionalImage && (
-          <div style={{ marginTop: '15px' }}>
-            <img src={data.promotionalImage} alt="Promotional Banner" style={{ maxWidth: '100%', height: 'auto', border: 'none', cursor: 'default' }} />
+          <div 
+            onClick={() => setEditingElement(editingElement === 'promo' ? null : 'promo')}
+            style={{ 
+              marginTop: '15px',
+              cursor: 'pointer',
+              padding: '2px',
+              borderRadius: '4px',
+              border: editingElement === 'promo' ? '2px solid #2563eb' : '2px solid transparent',
+              transition: 'all 0.2s'
+            }}
+          >
+            <img 
+              src={data.promotionalImage} 
+              alt="Promotional Banner" 
+              style={{ 
+                maxWidth: '100%', 
+                height: customStyles.promoHeight + 'px', 
+                objectFit: 'cover',
+                border: 'none', 
+                cursor: 'default' 
+              }} 
+            />
           </div>
         )}
       </div>
@@ -334,7 +376,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 14px; color: #6b7280; margin-bottom: 8px;",
           contact: "font-size: 13px; color: #374151;",
           link: "color: #2563eb; text-decoration: none;",
-          social: "margin-top: 8px; font-size: 13px;"
+          social: "margin-top: 8px; font-size: 13px;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         classic: {
           container: "font-family: 'Times New Roman', serif; line-height: 1.4; color: #2c3e50;",
@@ -343,7 +387,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 15px; color: #7f8c8d; margin-bottom: 10px;",
           contact: "font-size: 14px; color: #2c3e50;",
           link: "color: #c0392b; text-decoration: underline;",
-          social: "margin-top: 10px; font-size: 14px;"
+          social: "margin-top: 10px; font-size: 14px;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         creative: {
           container: "font-family: 'Arial', sans-serif; line-height: 1.5; color: #2d3748; background: linear-gradient(90deg, #f7fafc 0%, #edf2f7 100%); padding: 15px; border-radius: 8px;",
@@ -352,7 +398,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 14px; color: #38a169; margin-bottom: 8px; font-weight: 500;",
           contact: "font-size: 13px; color: #2d3748;",
           link: "color: #ed8936; text-decoration: none; font-weight: 500;",
-          social: "margin-top: 10px; font-size: 13px;"
+          social: "margin-top: 10px; font-size: 13px;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         minimal: {
           container: "font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.4; color: #333;",
@@ -361,7 +409,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 13px; color: #666; margin-bottom: 6px;",
           contact: "font-size: 12px; color: #666;",
           link: "color: #333; text-decoration: none;",
-          social: "margin-top: 6px; font-size: 12px;"
+          social: "margin-top: 6px; font-size: 12px;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         corporate: {
           container: "font-family: 'Calibri', 'Trebuchet MS', sans-serif; line-height: 1.5; color: #003366; border-left: 4px solid #0066cc; padding-left: 15px;",
@@ -370,7 +420,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 15px; color: #003366; margin-bottom: 8px; font-weight: 500;",
           contact: "font-size: 13px; color: #003366;",
           link: "color: #0066cc; text-decoration: none;",
-          social: "margin-top: 8px; font-size: 13px;"
+          social: "margin-top: 8px; font-size: 13px;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         tech: {
           container: "font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; line-height: 1.6; color: #0f172a; background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 4px;",
@@ -379,7 +431,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 14px; color: #dc2626; margin-bottom: 8px;",
           contact: "font-size: 13px; color: #374151;",
           link: "color: #2563eb; text-decoration: none;",
-          social: "margin-top: 8px; font-size: 13px;"
+          social: "margin-top: 8px; font-size: 13px;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         elegant: {
           container: "font-family: 'Georgia', serif; line-height: 1.7; color: #4a5568; background: #fefefe; padding: 20px; border: 1px solid #e2e8f0;",
@@ -388,7 +442,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 16px; color: #718096; margin-bottom: 12px;",
           contact: "font-size: 14px; color: #4a5568;",
           link: "color: #805ad5; text-decoration: none;",
-          social: "margin-top: 12px; font-size: 14px;"
+          social: "margin-top: 12px; font-size: 14px;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         bold: {
           container: "font-family: 'Impact', 'Arial Black', sans-serif; line-height: 1.4; color: #1a202c; background: #fed7d7; padding: 15px; border: 3px solid #e53e3e;",
@@ -397,7 +453,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 16px; color: #1a202c; margin-bottom: 10px; font-weight: bold;",
           contact: "font-size: 14px; color: #1a202c; font-weight: 600;",
           link: "color: #e53e3e; text-decoration: none; font-weight: bold;",
-          social: "margin-top: 10px; font-size: 14px; font-weight: bold;"
+          social: "margin-top: 10px; font-size: 14px; font-weight: bold;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         compact: {
           container: "font-family: 'Arial', sans-serif; line-height: 1.3; color: #333; font-size: 12px;",
@@ -406,7 +464,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 11px; color: #666; margin-bottom: 4px;",
           contact: "font-size: 11px; color: #666;",
           link: "color: #0066cc; text-decoration: none;",
-          social: "margin-top: 4px; font-size: 11px;"
+          social: "margin-top: 4px; font-size: 11px;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         signature: {
           container: "font-family: 'Brush Script MT', cursive; line-height: 1.8; color: #2c3e50;",
@@ -415,7 +475,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: "font-size: 16px; color: #2c3e50; margin-bottom: 10px; font-family: 'Georgia', serif;",
           contact: "font-size: 14px; color: #2c3e50; font-family: 'Georgia', serif;",
           link: "color: #8b4513; text-decoration: none;",
-          social: "margin-top: 10px; font-size: 14px; font-family: 'Georgia', serif;"
+          social: "margin-top: 10px; font-size: 14px; font-family: 'Georgia', serif;",
+          logo: "height: 80px; max-width: 200px; object-fit: contain;",
+          promo: "max-width: 100%; height: auto; border: none;"
         },
         custom: {
           container: `font-family: ${customStyles.nameFont}, sans-serif; line-height: 1.5; color: #333333; padding: ${customStyles.padding}px;`,
@@ -424,7 +486,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           company: `font-size: ${customStyles.companySize}px; color: ${customStyles.companyColor}; margin-bottom: ${customStyles.spacing}px;`,
           contact: `font-size: ${customStyles.contactSize}px; color: ${customStyles.contactColor};`,
           link: `color: ${customStyles.linkColor}; text-decoration: none;`,
-          social: `margin-top: ${customStyles.spacing}px; font-size: ${customStyles.contactSize}px;`
+          social: `margin-top: ${customStyles.spacing}px; font-size: ${customStyles.contactSize}px;`,
+          logo: `height: 80px; max-width: 200px; object-fit: contain; border-radius: ${customStyles.logoRadius}px;`,
+          promo: `max-width: 100%; height: ${customStyles.promoHeight}px; object-fit: cover; border: none;`
         }
       };
       return styles[formatting as keyof typeof styles] || styles.modern;
@@ -438,7 +502,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           <tr>
             ${data.logoUrl ? `
               <td style="padding-right: 20px; vertical-align: top;">
-                <img src="${data.logoUrl}" alt="Image" style="height: 80px; max-width: 200px; object-fit: contain;">
+                <img src="${data.logoUrl}" alt="Image" style="${(styles as any).logo || 'height: 80px; max-width: 200px; object-fit: contain;'}">
               </td>
             ` : ''}
             <td style="vertical-align: top;">
@@ -471,10 +535,10 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     if (data.promotionalImage) {
       const promoContent = data.promotionalLink 
         ? `<a href="${data.promotionalLink}" target="_blank" style="display: block; margin-top: 15px;">
-             <img src="${data.promotionalImage}" alt="Promotional Banner" style="max-width: 100%; height: auto; border: none;">
+             <img src="${data.promotionalImage}" alt="Promotional Banner" style="${(styles as any).promo || 'max-width: 100%; height: auto; border: none;'}">
            </a>`
         : `<div style="margin-top: 15px;">
-             <img src="${data.promotionalImage}" alt="Promotional Banner" style="max-width: 100%; height: auto; border: none;">
+             <img src="${data.promotionalImage}" alt="Promotional Banner" style="${(styles as any).promo || 'max-width: 100%; height: auto; border: none;'}">
            </div>`;
       
       signatureHtml += promoContent;
@@ -616,7 +680,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         Editing: {editingElement === 'name' ? 'Name' : 
                                  editingElement === 'role' ? 'Job Title' : 
                                  editingElement === 'company' ? 'Company' : 
-                                 editingElement === 'contact' ? 'Contact Info' : 'Social Links'}
+                                 editingElement === 'contact' ? 'Contact Info' : 
+                                 editingElement === 'social' ? 'Social Links' :
+                                 editingElement === 'logo' ? 'Logo/Image' : 'Promotional Image'}
                       </h4>
                       <button 
                         onClick={() => setEditingElement(null)}
@@ -627,6 +693,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
+                      {/* Text Element Controls */}
                       {(editingElement === 'name' || editingElement === 'role' || editingElement === 'company' || editingElement === 'contact') && (
                         <>
                           <div>
@@ -672,6 +739,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         </>
                       )}
                       
+                      {/* Link Color Controls */}
                       {(editingElement === 'contact' || editingElement === 'social') && (
                         <div>
                           <Label className="text-xs text-blue-700">Link Color</Label>
@@ -684,6 +752,37 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         </div>
                       )}
                       
+                      {/* Logo/Image Controls */}
+                      {editingElement === 'logo' && (
+                        <div>
+                          <Label className="text-xs text-blue-700">Corner Radius: {customStyles.logoRadius}px</Label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="20"
+                            value={customStyles.logoRadius}
+                            onChange={(e) => setCustomStyles({...customStyles, logoRadius: parseInt(e.target.value)})}
+                            className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Promotional Image Controls */}
+                      {editingElement === 'promo' && (
+                        <div>
+                          <Label className="text-xs text-blue-700">Height: {customStyles.promoHeight}px</Label>
+                          <input
+                            type="range"
+                            min="40"
+                            max="200"
+                            value={customStyles.promoHeight}
+                            onChange={(e) => setCustomStyles({...customStyles, promoHeight: parseInt(e.target.value)})}
+                            className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Spacing Control for all elements */}
                       <div>
                         <Label className="text-xs text-blue-700">Spacing: {customStyles.spacing}px</Label>
                         <input
