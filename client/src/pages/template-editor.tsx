@@ -72,6 +72,58 @@ interface TemplateEditorProps {
   templateId?: number;
 }
 
+// Function to generate HTML content from form data
+function generateHtmlFromFormData(data: TemplateFormData): string {
+  const { fullName, jobTitle, company, email, phone, website, linkedIn, twitter, instagram, logoUrl, promotionalImage, promotionalLink } = data;
+  
+  let html = '<div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">';
+  
+  // Main signature content
+  html += '<div style="display: flex; align-items: flex-start;">';
+  
+  // Logo section
+  if (logoUrl) {
+    html += `<div style="padding-right: 20px;"><img src="${logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px;" /></div>`;
+  }
+  
+  // Text content
+  html += '<div>';
+  if (fullName) html += `<div style="font-size: 18px; font-weight: bold; color: #2563eb; margin-bottom: 4px;">${fullName}</div>`;
+  if (jobTitle) html += `<div style="font-size: 14px; color: #666; margin-bottom: 4px;">${jobTitle}</div>`;
+  if (company) html += `<div style="font-size: 14px; color: #666; margin-bottom: 8px;">${company}</div>`;
+  
+  // Contact info
+  const contacts = [];
+  if (email) contacts.push(`<a href="mailto:${email}" style="color: #2563eb; text-decoration: none;">${email}</a>`);
+  if (phone) contacts.push(`<a href="tel:${phone}" style="color: #2563eb; text-decoration: none;">${phone}</a>`);
+  if (website) contacts.push(`<a href="${website}" style="color: #2563eb; text-decoration: none;">${website}</a>`);
+  
+  if (contacts.length > 0) {
+    html += `<div style="font-size: 13px; margin-bottom: 8px;">${contacts.join(' | ')}</div>`;
+  }
+  
+  // Social links
+  const socials = [];
+  if (linkedIn) socials.push(`<a href="${linkedIn}" style="color: #2563eb; text-decoration: none;">LinkedIn</a>`);
+  if (twitter) socials.push(`<a href="${twitter}" style="color: #2563eb; text-decoration: none;">Twitter</a>`);
+  if (instagram) socials.push(`<a href="${instagram}" style="color: #2563eb; text-decoration: none;">Instagram</a>`);
+  
+  if (socials.length > 0) {
+    html += `<div style="font-size: 13px;">${socials.join(' | ')}</div>`;
+  }
+  
+  html += '</div></div>';
+  
+  // Promotional image
+  if (promotionalImage) {
+    const imageTag = `<img src="${promotionalImage}" alt="Promotion" style="max-width: 100%; height: auto; margin-top: 16px;" />`;
+    html += promotionalLink ? `<a href="${promotionalLink}">${imageTag}</a>` : imageTag;
+  }
+  
+  html += '</div>';
+  return html;
+}
+
 export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [, setLocation] = useLocation();
   const [previewFormat, setPreviewFormat] = useState<"desktop" | "mobile">("desktop");
@@ -127,7 +179,23 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     mutationFn: async (data: TemplateFormData) => {
       const url = templateId ? `/api/templates/${templateId}` : '/api/templates';
       const method = templateId ? 'PUT' : 'POST';
-      return apiRequest(url, { method, body: data });
+      
+      // Extract signature content from form data
+      const { name, status, isShared, formatting, promotionalImage, promotionalLink, ...signatureFields } = data;
+      
+      // Structure the template data according to the schema
+      const templateData = {
+        name,
+        status,
+        isShared,
+        formatting,
+        promotionalImage,
+        promotionalLink,
+        content: signatureFields, // Store signature fields in content JSON
+        htmlContent: generateHtmlFromFormData(data), // Generate HTML preview
+      };
+      
+      return apiRequest(method, url, templateData);
     },
     onSuccess: () => {
       toast({ 
@@ -148,6 +216,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
 
   useEffect(() => {
     if (template) {
+      const content = (template.content as any) || {};
       form.reset({
         name: template.name,
         status: template.status as "draft" | "active" | "archived",
@@ -155,16 +224,16 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         formatting: template.formatting,
         promotionalImage: template.promotionalImage || "",
         promotionalLink: template.promotionalLink || "",
-        fullName: template.fullName || "",
-        jobTitle: template.jobTitle || "",
-        company: template.company || "",
-        email: template.email || "",
-        phone: template.phone || "",
-        website: template.website || "",
-        linkedIn: template.linkedIn || "",
-        twitter: template.twitter || "",
-        instagram: template.instagram || "",
-        logoUrl: template.logoUrl || "",
+        fullName: content.fullName || "",
+        jobTitle: content.jobTitle || "",
+        company: content.company || "",
+        email: content.email || "",
+        phone: content.phone || "",
+        website: content.website || "",
+        linkedIn: content.linkedIn || "",
+        twitter: content.twitter || "",
+        instagram: content.instagram || "",
+        logoUrl: content.logoUrl || "",
       });
     }
   }, [template, form]);
