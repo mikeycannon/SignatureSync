@@ -122,6 +122,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
 
   const saveTemplateMutation = useMutation({
     mutationFn: async (data: TemplateFormData) => {
+      console.log("Mutation data:", data);
       const { name, status, isShared, ...signatureData } = data;
       
       const templateData = {
@@ -131,6 +132,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         content: signatureData,
         htmlContent: generateHtmlContent(signatureData),
       };
+
+      console.log("Template data to send:", templateData);
+      console.log("API endpoint:", templateId ? `PUT /api/templates/${templateId}` : "POST /api/templates");
 
       if (templateId) {
         return await apiRequest("PUT", `/api/templates/${templateId}`, templateData);
@@ -229,6 +233,8 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   };
 
   const handleSave = (data: TemplateFormData) => {
+    console.log("Form data:", data);
+    console.log("Form errors:", form.formState.errors);
     saveTemplateMutation.mutate(data);
   };
 
