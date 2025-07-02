@@ -289,9 +289,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 transition: 'all 0.2s'
               }}
             >
-              {data.email && <div style={{ marginBottom: '2px' }}><a href={`mailto:${data.email}`} style={{ color: customStyles.linkColor, textDecoration: 'none' }}>{data.email}</a></div>}
+              {data.email && <div style={{ marginBottom: '2px' }}><a href={`mailto:${data.email}`} style={{ color: customStyles.linkColor, textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>{data.email}</a></div>}
               {data.phone && <div style={{ marginBottom: '2px' }}>{data.phone}</div>}
-              {data.website && <div style={{ marginBottom: '2px' }}><a href={data.website} style={{ color: customStyles.linkColor, textDecoration: 'none' }}>{data.website}</a></div>}
+              {data.website && <div style={{ marginBottom: '2px' }}><a href={data.website} style={{ color: customStyles.linkColor, textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>{data.website}</a></div>}
             </div>
             
             {(data.linkedIn || data.twitter || data.instagram) && (
@@ -307,9 +307,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   transition: 'all 0.2s'
                 }}
               >
-                {data.linkedIn && <a href={data.linkedIn} style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px' }}>LinkedIn</a>}
-                {data.twitter && <a href={data.twitter} style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px' }}>Twitter</a>}
-                {data.instagram && <a href={data.instagram} style={{ color: customStyles.linkColor, textDecoration: 'none' }}>Instagram</a>}
+                {data.linkedIn && <a href={data.linkedIn} style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px' }} onClick={(e) => e.stopPropagation()}>LinkedIn</a>}
+                {data.twitter && <a href={data.twitter} style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px' }} onClick={(e) => e.stopPropagation()}>Twitter</a>}
+                {data.instagram && <a href={data.instagram} style={{ color: customStyles.linkColor, textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>Instagram</a>}
               </div>
             )}
           </div>
