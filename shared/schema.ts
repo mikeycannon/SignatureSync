@@ -36,6 +36,9 @@ export const signatureTemplates = pgTable("signature_templates", {
   name: text("name").notNull(),
   content: json("content").notNull(), // Rich content structure
   htmlContent: text("html_content").notNull(),
+  formatting: text("formatting").notNull().default("modern"), // Formatting style option
+  promotionalImage: text("promotional_image"), // URL to promotional image
+  promotionalLink: text("promotional_link"), // Hyperlink for promotional image
   status: text("status").notNull().default("draft"), // draft, active, archived
   createdBy: integer("created_by").references(() => users.id).notNull(),
   isShared: boolean("is_shared").notNull().default(false),

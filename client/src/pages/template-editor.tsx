@@ -36,12 +36,29 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+// Formatting options for signature styling
+const FORMATTING_OPTIONS = [
+  { value: "modern", label: "Modern", description: "Clean lines with blue accents" },
+  { value: "classic", label: "Classic", description: "Traditional business style" },
+  { value: "creative", label: "Creative", description: "Colorful and vibrant design" },
+  { value: "minimal", label: "Minimal", description: "Simple and elegant" },
+  { value: "corporate", label: "Corporate", description: "Professional enterprise look" },
+  { value: "tech", label: "Tech", description: "Modern tech company style" },
+  { value: "elegant", label: "Elegant", description: "Sophisticated and refined" },
+  { value: "bold", label: "Bold", description: "Eye-catching and strong" },
+  { value: "compact", label: "Compact", description: "Space-efficient layout" },
+  { value: "signature", label: "Signature", description: "Handwritten signature style" }
+];
+
 // Schema for form data (includes signature fields)
 const templateFormSchema = z.object({
   // Template metadata
   name: z.string().min(1, "Template name is required"),
   status: z.enum(["draft", "active", "archived"]).default("draft"),
   isShared: z.boolean().default(false),
+  formatting: z.string().default("modern"),
+  promotionalImage: z.string().optional(),
+  promotionalLink: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
   
   // Signature data fields
   fullName: z.string().min(1, "Full name is required"),
@@ -81,6 +98,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       name: "",
       status: "draft",
       isShared: false,
+      formatting: "modern",
+      promotionalImage: "",
+      promotionalLink: "",
       fullName: "",
       jobTitle: "",
       company: "",
@@ -102,6 +122,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         name: (template as any)?.name || "",
         status: ((template as any)?.status as "draft" | "active" | "archived") || "draft",
         isShared: (template as any)?.isShared || false,
+        formatting: (template as any)?.formatting || "modern",
+        promotionalImage: (template as any)?.promotionalImage || "",
+        promotionalLink: (template as any)?.promotionalLink || "",
         fullName: content.fullName || "",
         jobTitle: content.jobTitle || "",
         company: content.company || "",
@@ -122,6 +145,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         name: data.name,
         status: data.status,
         isShared: data.isShared,
+        formatting: data.formatting,
+        promotionalImage: data.promotionalImage,
+        promotionalLink: data.promotionalLink,
         content: {
           fullName: data.fullName,
           jobTitle: data.jobTitle,
@@ -138,15 +164,9 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       };
 
       if (templateId) {
-        return apiRequest(`/api/templates/${templateId}`, {
-          method: "PATCH",
-          body: JSON.stringify(templateData),
-        });
+        return apiRequest(`/api/templates/${templateId}`, "PATCH", templateData);
       } else {
-        return apiRequest("/api/templates", {
-          method: "POST",
-          body: JSON.stringify(templateData),
-        });
+        return apiRequest("/api/templates", "POST", templateData);
       }
     },
     onSuccess: () => {
@@ -178,8 +198,106 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   };
 
   const generateHtmlContent = (data: TemplateFormData): string => {
-    return `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    const getFormattingStyles = (formatting: string) => {
+      const styles = {
+        modern: {
+          container: "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a1a1a;",
+          name: "font-size: 18px; font-weight: 600; color: #2563eb; margin-bottom: 4px;",
+          role: "font-size: 14px; color: #6b7280; margin-bottom: 2px;",
+          company: "font-size: 14px; color: #6b7280; margin-bottom: 8px;",
+          contact: "font-size: 13px; color: #374151;",
+          link: "color: #2563eb; text-decoration: none;",
+          social: "margin-top: 8px; font-size: 13px;"
+        },
+        classic: {
+          container: "font-family: 'Times New Roman', serif; line-height: 1.4; color: #2c3e50;",
+          name: "font-size: 20px; font-weight: bold; color: #2c3e50; margin-bottom: 6px;",
+          role: "font-size: 15px; color: #7f8c8d; margin-bottom: 3px; font-style: italic;",
+          company: "font-size: 15px; color: #7f8c8d; margin-bottom: 10px;",
+          contact: "font-size: 14px; color: #2c3e50;",
+          link: "color: #c0392b; text-decoration: underline;",
+          social: "margin-top: 10px; font-size: 14px;"
+        },
+        creative: {
+          container: "font-family: 'Arial', sans-serif; line-height: 1.5; color: #2d3748; background: linear-gradient(90deg, #f7fafc 0%, #edf2f7 100%); padding: 15px; border-radius: 8px;",
+          name: "font-size: 22px; font-weight: bold; color: #e53e3e; margin-bottom: 5px;",
+          role: "font-size: 14px; color: #805ad5; margin-bottom: 3px; font-weight: 500;",
+          company: "font-size: 14px; color: #38a169; margin-bottom: 8px; font-weight: 500;",
+          contact: "font-size: 13px; color: #2d3748;",
+          link: "color: #ed8936; text-decoration: none; font-weight: 500;",
+          social: "margin-top: 10px; font-size: 13px;"
+        },
+        minimal: {
+          container: "font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.4; color: #333;",
+          name: "font-size: 16px; font-weight: 400; color: #333; margin-bottom: 2px;",
+          role: "font-size: 13px; color: #666; margin-bottom: 1px;",
+          company: "font-size: 13px; color: #666; margin-bottom: 6px;",
+          contact: "font-size: 12px; color: #666;",
+          link: "color: #333; text-decoration: none;",
+          social: "margin-top: 6px; font-size: 12px;"
+        },
+        corporate: {
+          container: "font-family: 'Calibri', 'Trebuchet MS', sans-serif; line-height: 1.5; color: #003366; border-left: 4px solid #0066cc; padding-left: 15px;",
+          name: "font-size: 19px; font-weight: bold; color: #003366; margin-bottom: 5px;",
+          role: "font-size: 14px; color: #0066cc; margin-bottom: 3px; font-weight: 600;",
+          company: "font-size: 15px; color: #003366; margin-bottom: 8px; font-weight: 500;",
+          contact: "font-size: 13px; color: #003366;",
+          link: "color: #0066cc; text-decoration: none;",
+          social: "margin-top: 8px; font-size: 13px;"
+        },
+        tech: {
+          container: "font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; line-height: 1.6; color: #0f172a; background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 4px;",
+          name: "font-size: 18px; font-weight: 600; color: #7c3aed; margin-bottom: 4px;",
+          role: "font-size: 14px; color: #059669; margin-bottom: 2px;",
+          company: "font-size: 14px; color: #dc2626; margin-bottom: 8px;",
+          contact: "font-size: 13px; color: #374151;",
+          link: "color: #2563eb; text-decoration: none;",
+          social: "margin-top: 8px; font-size: 13px;"
+        },
+        elegant: {
+          container: "font-family: 'Georgia', serif; line-height: 1.7; color: #4a5568; background: #fefefe; padding: 20px; border: 1px solid #e2e8f0;",
+          name: "font-size: 24px; font-weight: 300; color: #2d3748; margin-bottom: 8px; letter-spacing: 0.5px;",
+          role: "font-size: 16px; color: #718096; margin-bottom: 4px; font-style: italic;",
+          company: "font-size: 16px; color: #718096; margin-bottom: 12px;",
+          contact: "font-size: 14px; color: #4a5568;",
+          link: "color: #805ad5; text-decoration: none;",
+          social: "margin-top: 12px; font-size: 14px;"
+        },
+        bold: {
+          container: "font-family: 'Impact', 'Arial Black', sans-serif; line-height: 1.4; color: #1a202c; background: #fed7d7; padding: 15px; border: 3px solid #e53e3e;",
+          name: "font-size: 24px; font-weight: 900; color: #e53e3e; margin-bottom: 6px; text-transform: uppercase;",
+          role: "font-size: 16px; color: #1a202c; margin-bottom: 4px; font-weight: bold;",
+          company: "font-size: 16px; color: #1a202c; margin-bottom: 10px; font-weight: bold;",
+          contact: "font-size: 14px; color: #1a202c; font-weight: 600;",
+          link: "color: #e53e3e; text-decoration: none; font-weight: bold;",
+          social: "margin-top: 10px; font-size: 14px; font-weight: bold;"
+        },
+        compact: {
+          container: "font-family: 'Arial', sans-serif; line-height: 1.3; color: #333; font-size: 12px;",
+          name: "font-size: 14px; font-weight: bold; color: #333; margin-bottom: 2px;",
+          role: "font-size: 11px; color: #666; margin-bottom: 1px;",
+          company: "font-size: 11px; color: #666; margin-bottom: 4px;",
+          contact: "font-size: 11px; color: #666;",
+          link: "color: #0066cc; text-decoration: none;",
+          social: "margin-top: 4px; font-size: 11px;"
+        },
+        signature: {
+          container: "font-family: 'Brush Script MT', cursive; line-height: 1.8; color: #2c3e50;",
+          name: "font-size: 28px; font-weight: normal; color: #8b4513; margin-bottom: 8px;",
+          role: "font-size: 16px; color: #2c3e50; margin-bottom: 4px; font-family: 'Georgia', serif;",
+          company: "font-size: 16px; color: #2c3e50; margin-bottom: 10px; font-family: 'Georgia', serif;",
+          contact: "font-size: 14px; color: #2c3e50; font-family: 'Georgia', serif;",
+          link: "color: #8b4513; text-decoration: none;",
+          social: "margin-top: 10px; font-size: 14px; font-family: 'Georgia', serif;"
+        }
+      };
+      return styles[formatting as keyof typeof styles] || styles.modern;
+    };
+
+    const styles = getFormattingStyles(data.formatting || 'modern');
+    
+    let signatureHtml = `
+      <div style="${styles.container}">
         <table cellpadding="0" cellspacing="0" border="0">
           <tr>
             ${data.logoUrl ? `
@@ -188,23 +306,23 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               </td>
             ` : ''}
             <td style="vertical-align: top;">
-              <div style="margin-bottom: 5px;">
-                <strong style="font-size: 18px; color: #2c3e50;">${data.fullName || 'Your Name'}</strong>
+              <div style="${styles.name}">
+                ${data.fullName || 'Your Name'}
               </div>
-              ${data.jobTitle ? `<div style="margin-bottom: 3px; color: #7f8c8d;">${data.jobTitle}</div>` : ''}
-              ${data.company ? `<div style="margin-bottom: 8px; color: #7f8c8d;">${data.company}</div>` : ''}
+              ${data.jobTitle ? `<div style="${styles.role}">${data.jobTitle}</div>` : ''}
+              ${data.company ? `<div style="${styles.company}">${data.company}</div>` : ''}
               
-              <div style="font-size: 14px;">
-                ${data.email ? `<div style="margin-bottom: 2px;"><a href="mailto:${data.email}" style="color: #3498db; text-decoration: none;">${data.email}</a></div>` : ''}
+              <div style="${styles.contact}">
+                ${data.email ? `<div style="margin-bottom: 2px;"><a href="mailto:${data.email}" style="${styles.link}">${data.email}</a></div>` : ''}
                 ${data.phone ? `<div style="margin-bottom: 2px;">${data.phone}</div>` : ''}
-                ${data.website ? `<div style="margin-bottom: 2px;"><a href="${data.website}" style="color: #3498db; text-decoration: none;">${data.website}</a></div>` : ''}
+                ${data.website ? `<div style="margin-bottom: 2px;"><a href="${data.website}" style="${styles.link}">${data.website}</a></div>` : ''}
               </div>
               
               ${(data.linkedIn || data.twitter || data.instagram) ? `
-                <div style="margin-top: 10px;">
-                  ${data.linkedIn ? `<a href="${data.linkedIn}" style="margin-right: 10px; color: #3498db; text-decoration: none;">LinkedIn</a>` : ''}
-                  ${data.twitter ? `<a href="${data.twitter}" style="margin-right: 10px; color: #3498db; text-decoration: none;">Twitter</a>` : ''}
-                  ${data.instagram ? `<a href="${data.instagram}" style="color: #3498db; text-decoration: none;">Instagram</a>` : ''}
+                <div style="${styles.social}">
+                  ${data.linkedIn ? `<a href="${data.linkedIn}" style="${styles.link}; margin-right: 10px;">LinkedIn</a>` : ''}
+                  ${data.twitter ? `<a href="${data.twitter}" style="${styles.link}; margin-right: 10px;">Twitter</a>` : ''}
+                  ${data.instagram ? `<a href="${data.instagram}" style="${styles.link};">Instagram</a>` : ''}
                 </div>
               ` : ''}
             </td>
@@ -212,6 +330,21 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         </table>
       </div>
     `;
+
+    // Add promotional image if provided
+    if (data.promotionalImage) {
+      const promoContent = data.promotionalLink 
+        ? `<a href="${data.promotionalLink}" target="_blank" style="display: block; margin-top: 15px;">
+             <img src="${data.promotionalImage}" alt="Promotional Banner" style="max-width: 100%; height: auto; border: none;">
+           </a>`
+        : `<div style="margin-top: 15px;">
+             <img src="${data.promotionalImage}" alt="Promotional Banner" style="max-width: 100%; height: auto; border: none;">
+           </div>`;
+      
+      signatureHtml += promoContent;
+    }
+
+    return signatureHtml;
   };
 
   if (isLoading) {
@@ -343,10 +476,12 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-5">
                       <TabsTrigger value="basic">Basic Info</TabsTrigger>
                       <TabsTrigger value="contact">Contact</TabsTrigger>
                       <TabsTrigger value="social">Social</TabsTrigger>
+                      <TabsTrigger value="formatting">Style</TabsTrigger>
+                      <TabsTrigger value="promotional">Promotion</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="basic" className="space-y-4 mt-4">
@@ -479,6 +614,83 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                               {...form.register("instagram")}
                               placeholder="https://instagram.com/johndoe"
                             />
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* Formatting Tab */}
+                    <TabsContent value="formatting" className="space-y-4">
+                      <div>
+                        <Label htmlFor="formatting">Signature Style</Label>
+                        <Select value={form.watch("formatting")} onValueChange={(value) => form.setValue("formatting", value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a formatting style" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FORMATTING_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div>
+                                  <div className="font-medium">{option.label}</div>
+                                  <div className="text-sm text-gray-500">{option.description}</div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TabsContent>
+
+                    {/* Promotional Tab */}
+                    <TabsContent value="promotional" className="space-y-4">
+                      <div>
+                        <Label htmlFor="promotional-image">Promotional Image URL</Label>
+                        <div className="mt-1">
+                          <Input
+                            id="promotional-image"
+                            {...form.register("promotionalImage")}
+                            placeholder="https://example.com/promo-banner.jpg"
+                          />
+                          <p className="text-sm text-gray-500 mt-1">
+                            Add a promotional image that will appear below your signature
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="promotional-link">Promotional Link</Label>
+                        <div className="mt-1">
+                          <Input
+                            id="promotional-link"
+                            {...form.register("promotionalLink")}
+                            placeholder="https://example.com/special-offer"
+                          />
+                          <p className="text-sm text-gray-500 mt-1">
+                            The promotional image will link to this URL when clicked
+                          </p>
+                        </div>
+                        {form.formState.errors.promotionalLink && (
+                          <p className="text-sm text-red-600 mt-1">{form.formState.errors.promotionalLink.message}</p>
+                        )}
+                      </div>
+
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-blue-800">Promotional Image Tips</h3>
+                            <div className="mt-2 text-sm text-blue-700">
+                              <ul className="list-disc list-inside space-y-1">
+                                <li>Use high-quality images (recommended: 600x200px)</li>
+                                <li>Keep file size under 1MB for better email delivery</li>
+                                <li>Test the image URL before saving</li>
+                                <li>Ensure the promotional link works correctly</li>
+                              </ul>
+                            </div>
                           </div>
                         </div>
                       </div>
