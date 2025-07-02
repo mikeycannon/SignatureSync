@@ -40,12 +40,13 @@ export default function Assets() {
   const [uploadError, setUploadError] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: assets, isLoading } = useQuery({
+  const { data: assets, isLoading } = useQuery<Asset[]>({
     queryKey: ["/api/assets"],
   });
 
@@ -149,10 +150,18 @@ export default function Assets() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      {/* Mobile menu overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+      
+      <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <div className="flex flex-col flex-1 overflow-hidden">
-        <TopBar title="Asset Library" />
+        <TopBar title="Asset Library" onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
         
         <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           <div className="max-w-6xl mx-auto">

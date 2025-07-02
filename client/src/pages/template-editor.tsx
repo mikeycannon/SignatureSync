@@ -153,6 +153,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [editingElement, setEditingElement] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingPromo, setUploadingPromo] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const promoFileInputRef = useRef<HTMLInputElement>(null);
   
@@ -971,10 +972,18 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      {/* Mobile menu overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+      
+      <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <div className="flex flex-col flex-1 overflow-hidden">
-        <TopBar title={templateId ? "Edit Template" : "Create Template"} />
+        <TopBar title={templateId ? "Edit Template" : "Create Template"} onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
         
         <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           <div className="max-w-6xl mx-auto">

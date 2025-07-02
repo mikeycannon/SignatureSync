@@ -36,6 +36,7 @@ export default function Templates() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -101,10 +102,18 @@ export default function Templates() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      {/* Mobile menu overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+      
+      <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <div className="flex flex-col flex-1 overflow-hidden">
-        <TopBar title="Signature Templates" />
+        <TopBar title="Signature Templates" onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
         
         <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           {/* Header and Filters */}
