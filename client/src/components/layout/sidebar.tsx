@@ -20,10 +20,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Signature Templates", href: "/templates", icon: FileSignature },
-  { name: "Team Members", href: "/team", icon: Users },
-  { name: "Asset Library", href: "/assets", icon: Upload },
+  { name: "Home", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Templates", href: "/templates", icon: FileSignature },
+  { name: "Team", href: "/team", icon: Users },
+  { name: "Assets", href: "/assets", icon: Upload },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
@@ -46,21 +46,16 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       flex flex-shrink-0 z-50
       ${isOpen ? 'fixed inset-y-0 left-0 md:relative' : 'hidden md:flex'}
     `}>
-      <div className="flex flex-col w-64 bg-white border-r border-gray-200 min-h-full">
+      <div className="flex flex-col w-20 bg-gray-900 min-h-full">
         {/* Logo */}
-        <div className="flex items-center flex-shrink-0 px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center">
-            <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-              <FileSignature className="h-4 w-4 text-white" />
-            </div>
-            <span className="ml-3 text-xl font-bold text-gray-900">
-              {tenant.name}
-            </span>
+        <div className="flex items-center justify-center flex-shrink-0 py-4">
+          <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
+            <FileSignature className="h-5 w-5 text-white" />
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <nav className="flex-1 flex flex-col items-center py-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
@@ -69,16 +64,16 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               <Link key={item.name} href={item.href}>
                 <div 
                   className={`
-                    flex items-center px-3 py-2 text-sm font-medium rounded-lg group cursor-pointer transition-colors
+                    flex flex-col items-center p-3 rounded-lg group cursor-pointer transition-colors w-16
                     ${isActive 
-                      ? "text-primary-700 bg-primary-50" 
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "text-white bg-primary-600" 
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
                     }
                   `}
                   onClick={() => onClose?.()}
                 >
-                  <Icon className={`mr-3 h-5 w-5 ${isActive ? "text-primary-500" : "text-gray-400"}`} />
-                  {item.name}
+                  <Icon className="h-6 w-6 mb-1" />
+                  <span className="text-xs font-medium">{item.name}</span>
                 </div>
               </Link>
             );
@@ -86,27 +81,28 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         </nav>
 
         {/* User Profile */}
-        <div className="flex-shrink-0 p-4 border-t border-gray-200">
+        <div className="flex-shrink-0 p-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full p-0 h-auto hover:bg-gray-50">
-                <div className="flex items-center w-full">
-                  <Avatar className="w-10 h-10">
-                    <AvatarFallback>
+              <Button variant="ghost" className="w-full p-2 h-auto hover:bg-gray-800 rounded-lg">
+                <div className="flex flex-col items-center">
+                  <Avatar className="w-8 h-8 mb-1">
+                    <AvatarFallback className="text-xs bg-primary-600 text-white">
                       {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'S'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="ml-3 text-left flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user.firstName} {user.lastName}
-                    </p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs text-gray-400">Me</span>
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="start" side="right" className="w-56 ml-2">
+              <div className="px-3 py-2 border-b">
+                <p className="text-sm font-medium text-gray-900">
+                  {user.firstName} {user.lastName}
+                </p>
+                <p className="text-xs text-gray-500">{user.email}</p>
+                <p className="text-xs text-gray-500 mt-1">{tenant.name}</p>
+              </div>
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
                 Profile
