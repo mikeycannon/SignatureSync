@@ -47,7 +47,8 @@ const FORMATTING_OPTIONS = [
   { value: "elegant", label: "Elegant", icon: "✨", color: "bg-pink-500" },
   { value: "bold", label: "Bold", icon: "💪", color: "bg-red-500" },
   { value: "compact", label: "Compact", icon: "📏", color: "bg-green-500" },
-  { value: "signature", label: "Signature", icon: "✍️", color: "bg-amber-600" }
+  { value: "signature", label: "Signature", icon: "✍️", color: "bg-amber-600" },
+  { value: "custom", label: "Custom", icon: "🎛️", color: "bg-violet-600" }
 ];
 
 // Schema for form data (includes signature fields)
@@ -83,6 +84,20 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("basic");
   const [previewFormat, setPreviewFormat] = useState<"desktop" | "mobile">("desktop");
+  const [customStyles, setCustomStyles] = useState({
+    nameSize: 18,
+    nameColor: "#2563eb",
+    nameFont: "Arial",
+    roleSize: 14,
+    roleColor: "#666666",
+    companySize: 14,
+    companyColor: "#666666",
+    contactSize: 13,
+    contactColor: "#333333",
+    linkColor: "#2563eb",
+    spacing: 8,
+    padding: 0
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -289,6 +304,15 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           contact: "font-size: 14px; color: #2c3e50; font-family: 'Georgia', serif;",
           link: "color: #8b4513; text-decoration: none;",
           social: "margin-top: 10px; font-size: 14px; font-family: 'Georgia', serif;"
+        },
+        custom: {
+          container: `font-family: ${customStyles.nameFont}, sans-serif; line-height: 1.5; color: #333333; padding: ${customStyles.padding}px;`,
+          name: `font-size: ${customStyles.nameSize}px; font-weight: 600; color: ${customStyles.nameColor}; margin-bottom: ${customStyles.spacing}px;`,
+          role: `font-size: ${customStyles.roleSize}px; color: ${customStyles.roleColor}; margin-bottom: ${customStyles.spacing/2}px;`,
+          company: `font-size: ${customStyles.companySize}px; color: ${customStyles.companyColor}; margin-bottom: ${customStyles.spacing}px;`,
+          contact: `font-size: ${customStyles.contactSize}px; color: ${customStyles.contactColor};`,
+          link: `color: ${customStyles.linkColor}; text-decoration: none;`,
+          social: `margin-top: ${customStyles.spacing}px; font-size: ${customStyles.contactSize}px;`
         }
       };
       return styles[formatting as keyof typeof styles] || styles.modern;
@@ -302,7 +326,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           <tr>
             ${data.logoUrl ? `
               <td style="padding-right: 20px; vertical-align: top;">
-                <img src="${data.logoUrl}" alt="Company Logo" style="width: 80px; height: 80px; object-fit: contain;">
+                <img src="${data.logoUrl}" alt="Image" style="height: 80px; max-width: 200px; object-fit: contain;">
               </td>
             ` : ''}
             <td style="vertical-align: top;">
@@ -488,6 +512,172 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               ))}
             </div>
 
+            {/* Custom Style Editor - appears when Custom is selected */}
+            {form.watch("formatting") === "custom" && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <span>🎨</span>
+                    <span>Custom Style Editor</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Name Styling */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-gray-700">Name Style</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <Label className="text-xs">Size: {customStyles.nameSize}px</Label>
+                          <input
+                            type="range"
+                            min="12"
+                            max="32"
+                            value={customStyles.nameSize}
+                            onChange={(e) => setCustomStyles({...customStyles, nameSize: parseInt(e.target.value)})}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Color</Label>
+                          <input
+                            type="color"
+                            value={customStyles.nameColor}
+                            onChange={(e) => setCustomStyles({...customStyles, nameColor: e.target.value})}
+                            className="w-full h-8 rounded border"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Role Styling */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-gray-700">Job Title Style</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <Label className="text-xs">Size: {customStyles.roleSize}px</Label>
+                          <input
+                            type="range"
+                            min="10"
+                            max="24"
+                            value={customStyles.roleSize}
+                            onChange={(e) => setCustomStyles({...customStyles, roleSize: parseInt(e.target.value)})}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Color</Label>
+                          <input
+                            type="color"
+                            value={customStyles.roleColor}
+                            onChange={(e) => setCustomStyles({...customStyles, roleColor: e.target.value})}
+                            className="w-full h-8 rounded border"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Company Styling */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-gray-700">Company Style</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <Label className="text-xs">Size: {customStyles.companySize}px</Label>
+                          <input
+                            type="range"
+                            min="10"
+                            max="24"
+                            value={customStyles.companySize}
+                            onChange={(e) => setCustomStyles({...customStyles, companySize: parseInt(e.target.value)})}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Color</Label>
+                          <input
+                            type="color"
+                            value={customStyles.companyColor}
+                            onChange={(e) => setCustomStyles({...customStyles, companyColor: e.target.value})}
+                            className="w-full h-8 rounded border"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contact Styling */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-gray-700">Contact Style</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <Label className="text-xs">Size: {customStyles.contactSize}px</Label>
+                          <input
+                            type="range"
+                            min="10"
+                            max="20"
+                            value={customStyles.contactSize}
+                            onChange={(e) => setCustomStyles({...customStyles, contactSize: parseInt(e.target.value)})}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Color</Label>
+                          <input
+                            type="color"
+                            value={customStyles.contactColor}
+                            onChange={(e) => setCustomStyles({...customStyles, contactColor: e.target.value})}
+                            className="w-full h-8 rounded border"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Link Color */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-gray-700">Link Style</h4>
+                      <div>
+                        <Label className="text-xs">Color</Label>
+                        <input
+                          type="color"
+                          value={customStyles.linkColor}
+                          onChange={(e) => setCustomStyles({...customStyles, linkColor: e.target.value})}
+                          className="w-full h-8 rounded border"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Spacing */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-gray-700">Layout</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <Label className="text-xs">Spacing: {customStyles.spacing}px</Label>
+                          <input
+                            type="range"
+                            min="2"
+                            max="20"
+                            value={customStyles.spacing}
+                            onChange={(e) => setCustomStyles({...customStyles, spacing: parseInt(e.target.value)})}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Padding: {customStyles.padding}px</Label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="30"
+                            value={customStyles.padding}
+                            onChange={(e) => setCustomStyles({...customStyles, padding: parseInt(e.target.value)})}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Signature Editor */}
             <form onSubmit={form.handleSubmit(handleSave)}>
               <Card>
@@ -536,12 +726,12 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="logoUrl">Company Logo URL</Label>
+                          <Label htmlFor="logoUrl">Image</Label>
                           <div className="flex space-x-2">
                             <Input
                               id="logoUrl"
                               {...form.register("logoUrl")}
-                              placeholder="https://example.com/logo.png"
+                              placeholder="https://example.com/image.png"
                               className="flex-1"
                             />
                             <Button type="button" variant="outline" size="icon">
