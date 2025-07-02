@@ -717,10 +717,11 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left Column - Preview (6/12 width) */}
               <div className="lg:col-span-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                    <CardTitle>Live Preview</CardTitle>
-                    <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <div className="sticky top-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                      <CardTitle>Live Preview</CardTitle>
+                      <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
                       <Button
                         type="button"
                         variant={previewFormat === "desktop" ? "default" : "ghost"}
@@ -741,8 +742,8 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                         <Smartphone className="h-4 w-4 mr-1" />
                         Mobile
                       </Button>
-                    </div>
-                  </CardHeader>
+                      </div>
+                    </CardHeader>
                   <CardContent>
                     <div className={`signature-preview bg-white border rounded p-4 min-h-40 ${
                       previewFormat === "mobile" 
@@ -794,6 +795,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                     )}
                   </CardContent>
                 </Card>
+                </div>
               </div>
 
               {/* Right Column - Signature Editor (6/12 width) */}
@@ -982,6 +984,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 </form>
               </div>
             </div>
+          </div>
           </div>
         </main>
       </div>
