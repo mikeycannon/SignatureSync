@@ -85,14 +85,11 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="w-full p-2 h-auto hover:bg-gray-800 rounded-lg">
-                <div className="flex flex-col items-center">
-                  <Avatar className="w-8 h-8 mb-1">
-                    <AvatarFallback className="text-xs bg-primary-600 text-white">
-                      {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'S'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs text-gray-400">Me</span>
-                </div>
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className="text-sm bg-gray-700 text-white font-medium">
+                    {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'S'}
+                  </AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="right" className="w-56 ml-2">
