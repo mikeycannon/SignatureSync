@@ -41,46 +41,27 @@ export function TemplatePreviewModal({
           {/* Template Preview */}
           <div className="bg-gray-50 rounded-lg p-6">
             <Card className="p-4 bg-white">
-              {/* Sample signature preview */}
-              <div className="flex items-start space-x-4">
-                <img
-                  src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80"
-                  alt="Company logo"
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">John Doe</h3>
-                  <p className="text-sm text-gray-600">Senior Marketing Manager</p>
-                  <p className="text-sm text-gray-600">Acme Corporation</p>
-                  
-                  <div className="mt-2 space-y-1">
-                    <p className="text-sm text-gray-500 flex items-center">
-                      <span className="mr-2">📧</span>
-                      john.doe@acme.com
-                    </p>
-                    <p className="text-sm text-gray-500 flex items-center">
-                      <span className="mr-2">📞</span>
-                      (555) 123-4567
-                    </p>
-                    <p className="text-sm text-gray-500 flex items-center">
-                      <span className="mr-2">🌐</span>
-                      www.acme.com
-                    </p>
-                  </div>
-                  
-                  <div className="mt-3 flex space-x-3">
-                    <Button variant="ghost" size="sm" className="p-1 h-8 w-8">
-                      <Linkedin className="h-4 w-4 text-blue-600" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="p-1 h-8 w-8">
-                      <Twitter className="h-4 w-4 text-blue-400" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="p-1 h-8 w-8">
-                      <Instagram className="h-4 w-4 text-pink-600" />
-                    </Button>
-                  </div>
+              {/* Sample email context */}
+              <div className="border-b border-gray-200 pb-4 mb-4">
+                <div className="text-sm text-gray-500 mb-2">
+                  <strong>To:</strong> client@example.com
+                </div>
+                <div className="text-sm text-gray-500 mb-4">
+                  <strong>Subject:</strong> Project Update
+                </div>
+                <div className="text-gray-400 text-sm leading-relaxed">
+                  <p className="mb-3">Hi there,</p>
+                  <p className="mb-3">Thanks for the feedback on the latest designs. I've incorporated all your suggestions and the team is excited to move forward with the implementation.</p>
+                  <p className="mb-4">Looking forward to hearing from you soon!</p>
+                  <p className="mb-4 text-gray-500">Best regards,</p>
                 </div>
               </div>
+              
+              {/* Actual template preview using saved HTML content */}
+              <div 
+                dangerouslySetInnerHTML={{ __html: template.htmlContent || '' }}
+                className="signature-preview"
+              />
             </Card>
           </div>
 

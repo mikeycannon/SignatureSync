@@ -101,9 +101,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   // Populate form when template data is loaded
   useEffect(() => {
     if (template && templateId) {
-      console.log("Loading template:", template);
       const content = (template as any)?.content || {};
-      console.log("Template content:", content);
       form.reset({
         name: (template as any)?.name || "",
         status: ((template as any)?.status as "draft" | "active" | "archived") || "draft",

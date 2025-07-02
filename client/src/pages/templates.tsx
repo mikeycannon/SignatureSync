@@ -40,7 +40,7 @@ export default function Templates() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: templates, isLoading } = useQuery({
+  const { data: templates, isLoading } = useQuery<SignatureTemplate[]>({
     queryKey: ["/api/templates"],
   });
 
@@ -65,11 +65,11 @@ export default function Templates() {
     },
   });
 
-  const filteredTemplates = (templates || []).filter((template: SignatureTemplate) => {
+  const filteredTemplates = Array.isArray(templates) ? templates.filter((template: SignatureTemplate) => {
     const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || template.status === statusFilter;
     return matchesSearch && matchesStatus;
-  });
+  }) : [];
 
   const handleEditTemplate = (template: SignatureTemplate) => {
     window.location.href = `/templates/${template.id}/edit`;
