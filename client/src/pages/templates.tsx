@@ -200,7 +200,14 @@ export default function Templates() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTemplates.map((template: SignatureTemplate, index: number) => (
-                <Card key={template.id} className="hover:shadow-lg transition-shadow">
+                <Card 
+                  key={template.id} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => {
+                    setSelectedTemplate(template);
+                    setIsPreviewOpen(true);
+                  }}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className={`w-10 h-10 ${getTemplateGradient(index)} rounded-lg flex items-center justify-center`}>
@@ -224,17 +231,7 @@ export default function Templates() {
                           Shared
                         </Badge>
                       )}
-                      <div className="flex space-x-2 ml-auto">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTemplate(template);
-                            setIsPreviewOpen(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                      <div className="flex space-x-2 ml-auto" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="sm"
