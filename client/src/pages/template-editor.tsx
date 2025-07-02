@@ -235,7 +235,17 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   const handleSave = (data: TemplateFormData) => {
     console.log("Form data:", data);
     console.log("Form errors:", form.formState.errors);
+    console.log("Form valid:", form.formState.isValid);
+    console.log("Form dirty:", form.formState.isDirty);
     saveTemplateMutation.mutate(data);
+  };
+
+  const handleButtonClick = () => {
+    console.log("Button clicked");
+    console.log("Form state:", form.formState);
+    console.log("Form values:", form.getValues());
+    console.log("Form errors:", form.formState.errors);
+    form.handleSubmit(handleSave)();
   };
 
   const handleCancel = () => {
@@ -310,7 +320,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   <Eye className="h-4 w-4 mr-2" />
                   {previewMode ? "Edit" : "Preview"}
                 </Button>
-                <Button onClick={form.handleSubmit(handleSave)} disabled={saveTemplateMutation.isPending}>
+                <Button onClick={handleButtonClick} disabled={saveTemplateMutation.isPending}>
                   <Save className="h-4 w-4 mr-2" />
                   {saveTemplateMutation.isPending ? "Saving..." : "Save Template"}
                 </Button>
