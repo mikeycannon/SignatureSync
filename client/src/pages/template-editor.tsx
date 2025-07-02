@@ -31,7 +31,9 @@ import {
   Save,
   ArrowLeft,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Monitor,
+  Smartphone
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -70,6 +72,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("basic");
   const [previewMode, setPreviewMode] = useState(false);
+  const [previewFormat, setPreviewFormat] = useState<"desktop" | "mobile">("desktop");
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -537,12 +540,41 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   {/* Preview Panel */}
                   <div className="lg:sticky lg:top-6">
                     <Card>
-                      <CardHeader>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0">
                         <CardTitle>Live Preview</CardTitle>
+                        <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                          <Button
+                            type="button"
+                            variant={previewFormat === "desktop" ? "default" : "ghost"}
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => setPreviewFormat("desktop")}
+                          >
+                            <Monitor className="h-4 w-4 mr-1" />
+                            Desktop
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={previewFormat === "mobile" ? "default" : "ghost"}
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => setPreviewFormat("mobile")}
+                          >
+                            <Smartphone className="h-4 w-4 mr-1" />
+                            Mobile
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="signature-preview bg-white border rounded p-4 min-h-[300px]">
-                          <div dangerouslySetInnerHTML={{ __html: generateHtmlContent(formData) }} />
+                        <div className={`signature-preview bg-white border rounded p-4 min-h-[300px] ${
+                          previewFormat === "mobile" 
+                            ? "max-w-sm mx-auto" 
+                            : "w-full"
+                        }`}>
+                          <div 
+                            dangerouslySetInnerHTML={{ __html: generateHtmlContent(formData) }} 
+                            className={previewFormat === "mobile" ? "text-sm" : ""}
+                          />
                         </div>
 
                         <Separator className="my-4" />
