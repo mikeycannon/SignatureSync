@@ -98,6 +98,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     spacing: 8,
     padding: 0
   });
+  const [editingElement, setEditingElement] = useState<string | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -113,7 +114,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
       name: "",
       status: "draft",
       isShared: false,
-      formatting: "modern",
+      formatting: "custom",
       promotionalImage: "",
       promotionalLink: "",
       fullName: "",
@@ -210,6 +211,123 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
 
   const handleCancel = () => {
     setLocation("/templates");
+  };
+
+  const generateInteractivePreview = (data: TemplateFormData) => {
+    
+    return (
+      <div style={{ fontFamily: customStyles.nameFont + ', sans-serif', lineHeight: 1.5, color: '#333333', padding: customStyles.padding + 'px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+          {data.logoUrl && (
+            <div style={{ paddingRight: '20px', verticalAlign: 'top' }}>
+              <img src={data.logoUrl} alt="Image" style={{ height: '80px', maxWidth: '200px', objectFit: 'contain' }} />
+            </div>
+          )}
+          <div style={{ verticalAlign: 'top' }}>
+            <div 
+              onClick={() => setEditingElement(editingElement === 'name' ? null : 'name')}
+              style={{ 
+                fontSize: customStyles.nameSize + 'px', 
+                fontWeight: 600, 
+                color: customStyles.nameColor, 
+                marginBottom: customStyles.spacing + 'px',
+                cursor: 'pointer',
+                padding: '2px 4px',
+                borderRadius: '4px',
+                border: editingElement === 'name' ? '2px solid #2563eb' : '2px solid transparent',
+                transition: 'all 0.2s'
+              }}
+            >
+              {data.fullName || 'Your Name'}
+            </div>
+            
+            {data.jobTitle && (
+              <div 
+                onClick={() => setEditingElement(editingElement === 'role' ? null : 'role')}
+                style={{ 
+                  fontSize: customStyles.roleSize + 'px', 
+                  color: customStyles.roleColor, 
+                  marginBottom: (customStyles.spacing/2) + 'px',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  border: editingElement === 'role' ? '2px solid #2563eb' : '2px solid transparent',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {data.jobTitle}
+              </div>
+            )}
+            
+            {data.company && (
+              <div 
+                onClick={() => setEditingElement(editingElement === 'company' ? null : 'company')}
+                style={{ 
+                  fontSize: customStyles.companySize + 'px', 
+                  color: customStyles.companyColor, 
+                  marginBottom: customStyles.spacing + 'px',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  border: editingElement === 'company' ? '2px solid #2563eb' : '2px solid transparent',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {data.company}
+              </div>
+            )}
+            
+            <div 
+              onClick={() => setEditingElement(editingElement === 'contact' ? null : 'contact')}
+              style={{ 
+                fontSize: customStyles.contactSize + 'px', 
+                color: customStyles.contactColor,
+                cursor: 'pointer',
+                padding: '2px 4px',
+                borderRadius: '4px',
+                border: editingElement === 'contact' ? '2px solid #2563eb' : '2px solid transparent',
+                transition: 'all 0.2s'
+              }}
+            >
+              {data.email && <div style={{ marginBottom: '2px' }}><a href={`mailto:${data.email}`} style={{ color: customStyles.linkColor, textDecoration: 'none' }}>{data.email}</a></div>}
+              {data.phone && <div style={{ marginBottom: '2px' }}>{data.phone}</div>}
+              {data.website && <div style={{ marginBottom: '2px' }}><a href={data.website} style={{ color: customStyles.linkColor, textDecoration: 'none' }}>{data.website}</a></div>}
+            </div>
+            
+            {(data.linkedIn || data.twitter || data.instagram) && (
+              <div 
+                onClick={() => setEditingElement(editingElement === 'social' ? null : 'social')}
+                style={{ 
+                  marginTop: customStyles.spacing + 'px', 
+                  fontSize: customStyles.contactSize + 'px',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  border: editingElement === 'social' ? '2px solid #2563eb' : '2px solid transparent',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {data.linkedIn && <a href={data.linkedIn} style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px' }}>LinkedIn</a>}
+                {data.twitter && <a href={data.twitter} style={{ color: customStyles.linkColor, textDecoration: 'none', marginRight: '10px' }}>Twitter</a>}
+                {data.instagram && <a href={data.instagram} style={{ color: customStyles.linkColor, textDecoration: 'none' }}>Instagram</a>}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {data.promotionalImage && (
+          <div style={{ marginTop: '15px' }}>
+            {data.promotionalLink ? (
+              <a href={data.promotionalLink} target="_blank" style={{ display: 'block' }}>
+                <img src={data.promotionalImage} alt="Promotional Banner" style={{ maxWidth: '100%', height: 'auto', border: 'none' }} />
+              </a>
+            ) : (
+              <img src={data.promotionalImage} alt="Promotional Banner" style={{ maxWidth: '100%', height: 'auto', border: 'none' }} />
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const generateHtmlContent = (data: TemplateFormData): string => {
@@ -484,11 +602,108 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                     ? "max-w-sm mx-auto" 
                     : "w-full"
                 }`}>
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: generateHtmlContent(formData) }} 
-                    className={previewFormat === "mobile" ? "text-sm" : ""}
-                  />
+                  {form.watch("formatting") === "custom" ? (
+                    <div className={previewFormat === "mobile" ? "text-sm" : ""}>
+                      {generateInteractivePreview(formData)}
+                    </div>
+                  ) : (
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: generateHtmlContent(formData) }} 
+                      className={previewFormat === "mobile" ? "text-sm" : ""}
+                    />
+                  )}
                 </div>
+                
+                {/* Compact Style Editor - appears when element is clicked */}
+                {editingElement && form.watch("formatting") === "custom" && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-sm text-blue-900">
+                        Editing: {editingElement === 'name' ? 'Name' : 
+                                 editingElement === 'role' ? 'Job Title' : 
+                                 editingElement === 'company' ? 'Company' : 
+                                 editingElement === 'contact' ? 'Contact Info' : 'Social Links'}
+                      </h4>
+                      <button 
+                        onClick={() => setEditingElement(null)}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      {(editingElement === 'name' || editingElement === 'role' || editingElement === 'company' || editingElement === 'contact') && (
+                        <>
+                          <div>
+                            <Label className="text-xs text-blue-700">
+                              Size: {editingElement === 'name' ? customStyles.nameSize : 
+                                     editingElement === 'role' ? customStyles.roleSize : 
+                                     editingElement === 'company' ? customStyles.companySize : customStyles.contactSize}px
+                            </Label>
+                            <input
+                              type="range"
+                              min="10"
+                              max={editingElement === 'name' ? "32" : "24"}
+                              value={editingElement === 'name' ? customStyles.nameSize : 
+                                     editingElement === 'role' ? customStyles.roleSize : 
+                                     editingElement === 'company' ? customStyles.companySize : customStyles.contactSize}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (editingElement === 'name') setCustomStyles({...customStyles, nameSize: value});
+                                else if (editingElement === 'role') setCustomStyles({...customStyles, roleSize: value});
+                                else if (editingElement === 'company') setCustomStyles({...customStyles, companySize: value});
+                                else setCustomStyles({...customStyles, contactSize: value});
+                              }}
+                              className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-blue-700">Color</Label>
+                            <input
+                              type="color"
+                              value={editingElement === 'name' ? customStyles.nameColor : 
+                                     editingElement === 'role' ? customStyles.roleColor : 
+                                     editingElement === 'company' ? customStyles.companyColor : customStyles.contactColor}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (editingElement === 'name') setCustomStyles({...customStyles, nameColor: value});
+                                else if (editingElement === 'role') setCustomStyles({...customStyles, roleColor: value});
+                                else if (editingElement === 'company') setCustomStyles({...customStyles, companyColor: value});
+                                else setCustomStyles({...customStyles, contactColor: value});
+                              }}
+                              className="w-full h-8 rounded border border-blue-300"
+                            />
+                          </div>
+                        </>
+                      )}
+                      
+                      {(editingElement === 'contact' || editingElement === 'social') && (
+                        <div>
+                          <Label className="text-xs text-blue-700">Link Color</Label>
+                          <input
+                            type="color"
+                            value={customStyles.linkColor}
+                            onChange={(e) => setCustomStyles({...customStyles, linkColor: e.target.value})}
+                            className="w-full h-8 rounded border border-blue-300"
+                          />
+                        </div>
+                      )}
+                      
+                      <div>
+                        <Label className="text-xs text-blue-700">Spacing: {customStyles.spacing}px</Label>
+                        <input
+                          type="range"
+                          min="2"
+                          max="20"
+                          value={customStyles.spacing}
+                          onChange={(e) => setCustomStyles({...customStyles, spacing: parseInt(e.target.value)})}
+                          className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -512,170 +727,13 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               ))}
             </div>
 
-            {/* Custom Style Editor - appears when Custom is selected */}
-            {form.watch("formatting") === "custom" && (
-              <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <span>🎨</span>
-                    <span>Custom Style Editor</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Name Styling */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm text-gray-700">Name Style</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-xs">Size: {customStyles.nameSize}px</Label>
-                          <input
-                            type="range"
-                            min="12"
-                            max="32"
-                            value={customStyles.nameSize}
-                            onChange={(e) => setCustomStyles({...customStyles, nameSize: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Color</Label>
-                          <input
-                            type="color"
-                            value={customStyles.nameColor}
-                            onChange={(e) => setCustomStyles({...customStyles, nameColor: e.target.value})}
-                            className="w-full h-8 rounded border"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Role Styling */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm text-gray-700">Job Title Style</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-xs">Size: {customStyles.roleSize}px</Label>
-                          <input
-                            type="range"
-                            min="10"
-                            max="24"
-                            value={customStyles.roleSize}
-                            onChange={(e) => setCustomStyles({...customStyles, roleSize: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Color</Label>
-                          <input
-                            type="color"
-                            value={customStyles.roleColor}
-                            onChange={(e) => setCustomStyles({...customStyles, roleColor: e.target.value})}
-                            className="w-full h-8 rounded border"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Company Styling */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm text-gray-700">Company Style</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-xs">Size: {customStyles.companySize}px</Label>
-                          <input
-                            type="range"
-                            min="10"
-                            max="24"
-                            value={customStyles.companySize}
-                            onChange={(e) => setCustomStyles({...customStyles, companySize: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Color</Label>
-                          <input
-                            type="color"
-                            value={customStyles.companyColor}
-                            onChange={(e) => setCustomStyles({...customStyles, companyColor: e.target.value})}
-                            className="w-full h-8 rounded border"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contact Styling */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm text-gray-700">Contact Style</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-xs">Size: {customStyles.contactSize}px</Label>
-                          <input
-                            type="range"
-                            min="10"
-                            max="20"
-                            value={customStyles.contactSize}
-                            onChange={(e) => setCustomStyles({...customStyles, contactSize: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Color</Label>
-                          <input
-                            type="color"
-                            value={customStyles.contactColor}
-                            onChange={(e) => setCustomStyles({...customStyles, contactColor: e.target.value})}
-                            className="w-full h-8 rounded border"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Link Color */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm text-gray-700">Link Style</h4>
-                      <div>
-                        <Label className="text-xs">Color</Label>
-                        <input
-                          type="color"
-                          value={customStyles.linkColor}
-                          onChange={(e) => setCustomStyles({...customStyles, linkColor: e.target.value})}
-                          className="w-full h-8 rounded border"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Spacing */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm text-gray-700">Layout</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-xs">Spacing: {customStyles.spacing}px</Label>
-                          <input
-                            type="range"
-                            min="2"
-                            max="20"
-                            value={customStyles.spacing}
-                            onChange={(e) => setCustomStyles({...customStyles, spacing: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Padding: {customStyles.padding}px</Label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="30"
-                            value={customStyles.padding}
-                            onChange={(e) => setCustomStyles({...customStyles, padding: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Interactive Styling Hint */}
+            {form.watch("formatting") === "custom" && !editingElement && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">💡 Tip:</span> Click any element in the preview above to customize its style (size, color, spacing)
+                </p>
+              </div>
             )}
 
             {/* Signature Editor */}
