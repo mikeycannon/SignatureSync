@@ -82,16 +82,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { tenantName, tenantSlug, ...userData } = req.body;
+      const { organizationName, domain, ...userData } = req.body;
       
-      // Validate tenant data
-      const tenantData = insertTenantSchema.parse({
-        name: tenantName,
-        slug: tenantSlug,
-      });
-
-      // Validate user data
-      const validatedUserData = insertUserSchema.parse(userData);
+      // Extract slug from domain (remove .com if present)
+      const slug = domain.replace(/\.com$/, '');
+      
+      // Create tenant data
+      const tenantData = {
+        name: organizationName,
+        slug: slug,
+      };
 
       // Check if tenant slug is available
       const existingTenant = await storage.getTenantBySlug(tenantData.slug);
@@ -100,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user email is available
-      const existingUser = await storage.getUserByEmail(validatedUserData.email);
+      const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
         return res.status(400).json({ error: "Email already registered" });
       }
@@ -110,8 +110,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create admin user for tenant
       const user = await storage.createUser({
-        ...validatedUserData,
         tenantId: tenant.id,
+        email: userData.email,
+        username: userData.email, // Use email as username
+        password: userData.password,
+        confirmPassword: userData.confirmPassword,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         role: "admin",
       });
 

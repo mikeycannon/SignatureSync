@@ -51,7 +51,7 @@ export default function Register() {
     try {
       await register({
         organizationName: formData.tenantName,
-        domain: formData.tenantSlug + ".com",
+        domain: formData.tenantSlug + ".com", 
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
