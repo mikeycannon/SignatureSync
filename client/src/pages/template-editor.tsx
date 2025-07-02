@@ -38,16 +38,16 @@ import { z } from "zod";
 
 // Formatting options for signature styling
 const FORMATTING_OPTIONS = [
-  { value: "modern", label: "Modern", description: "Clean lines with blue accents" },
-  { value: "classic", label: "Classic", description: "Traditional business style" },
-  { value: "creative", label: "Creative", description: "Colorful and vibrant design" },
-  { value: "minimal", label: "Minimal", description: "Simple and elegant" },
-  { value: "corporate", label: "Corporate", description: "Professional enterprise look" },
-  { value: "tech", label: "Tech", description: "Modern tech company style" },
-  { value: "elegant", label: "Elegant", description: "Sophisticated and refined" },
-  { value: "bold", label: "Bold", description: "Eye-catching and strong" },
-  { value: "compact", label: "Compact", description: "Space-efficient layout" },
-  { value: "signature", label: "Signature", description: "Handwritten signature style" }
+  { value: "modern", label: "Modern", icon: "💼", color: "bg-blue-500" },
+  { value: "classic", label: "Classic", icon: "🏛️", color: "bg-gray-600" },
+  { value: "creative", label: "Creative", icon: "🎨", color: "bg-purple-500" },
+  { value: "minimal", label: "Minimal", icon: "◯", color: "bg-gray-400" },
+  { value: "corporate", label: "Corporate", icon: "🏢", color: "bg-blue-700" },
+  { value: "tech", label: "Tech", icon: "⚡", color: "bg-indigo-500" },
+  { value: "elegant", label: "Elegant", icon: "✨", color: "bg-pink-500" },
+  { value: "bold", label: "Bold", icon: "💪", color: "bg-red-500" },
+  { value: "compact", label: "Compact", icon: "📏", color: "bg-green-500" },
+  { value: "signature", label: "Signature", icon: "✍️", color: "bg-amber-600" }
 ];
 
 // Schema for form data (includes signature fields)
@@ -468,54 +468,25 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
               </CardContent>
             </Card>
 
-            {/* Style Selection Carousel */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Choose Your Style</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative">
-                  <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    {FORMATTING_OPTIONS.map((option) => (
-                      <div
-                        key={option.value}
-                        className={`flex-shrink-0 w-56 p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                          form.watch("formatting") === option.value
-                            ? "border-blue-500 bg-blue-50 shadow-md"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                        onClick={() => form.setValue("formatting", option.value)}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-sm">{option.label}</h3>
-                          {form.watch("formatting") === option.value && (
-                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                              <div className="w-2 h-2 bg-white rounded-full"></div>
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-600 mb-3 h-8">{option.description}</p>
-                        <div className="bg-white border rounded-md p-3 overflow-hidden" style={{ height: '120px' }}>
-                          <div 
-                            dangerouslySetInnerHTML={{ 
-                              __html: generateHtmlContent({...formData, formatting: option.value}) 
-                            }}
-                            className="transform scale-50 origin-top-left text-xs"
-                            style={{ width: '200%' }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+            {/* Style Selection */}
+            <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              {FORMATTING_OPTIONS.map((option) => (
+                <div
+                  key={option.value}
+                  className={`flex-shrink-0 flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-sm ${
+                    form.watch("formatting") === option.value
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 bg-white hover:border-gray-300"
+                  }`}
+                  onClick={() => form.setValue("formatting", option.value)}
+                >
+                  <div className={`w-8 h-8 rounded-lg ${option.color} flex items-center justify-center text-white text-lg`}>
+                    {option.icon}
                   </div>
-                  <div className="text-xs text-gray-500 mt-2 flex items-center">
-                    <span>Scroll horizontally to see all styles</span>
-                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
+                  <span className="text-sm font-medium text-gray-900 whitespace-nowrap">{option.label}</span>
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
 
             {/* Signature Editor */}
             <form onSubmit={form.handleSubmit(handleSave)}>
