@@ -994,21 +994,22 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                 Back to Templates
               </Button>
               
-              <div className="mb-6">
-                <div className="flex-1 max-w-md mb-4">
+              {/* Desktop: Title and buttons on same row, Mobile: Title on top, buttons below */}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                <div className="flex-1 min-w-0">
                   <Input
                     id="template-name"
                     {...form.register("name")}
                     placeholder="Signature #1"
-                    className="text-3xl font-bold text-gray-900 border-none bg-transparent p-0 shadow-none focus:border focus:bg-white focus:shadow-sm focus:p-3 focus:rounded-md transition-all"
+                    className="text-2xl lg:text-3xl font-bold text-gray-900 border-none bg-transparent p-0 shadow-none focus:border focus:bg-white focus:shadow-sm focus:p-3 focus:rounded-md transition-all"
                   />
                   {form.formState.errors.name && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.name.message}</p>
                   )}
                 </div>
                 
-                {/* Mobile: Buttons under title, Desktop: Buttons on the right */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+                {/* Status and Save buttons */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 lg:flex-shrink-0">
                   <Select value={form.watch("status")} onValueChange={(value: "draft" | "active" | "archived") => form.setValue("status", value)}>
                     <SelectTrigger className="w-full sm:w-32">
                       <SelectValue placeholder="Status" />
