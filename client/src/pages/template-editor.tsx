@@ -72,6 +72,62 @@ interface TemplateEditorProps {
   templateId?: number;
 }
 
+// Generate HTML content with custom styles
+function generateHtmlWithCustomStyles(data: TemplateFormData, styles: any): string {
+  const { fullName, jobTitle, company, email, phone, website, linkedIn, twitter, instagram, logoUrl, promotionalImage, promotionalLink } = data;
+  
+  let html = '<div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">';
+  
+  // Main signature content
+  html += '<div style="display: flex; align-items: flex-start;">';
+  
+  // Logo section
+  if (logoUrl) {
+    html += `<div style="padding-right: ${styles.logoSpacing}px;"><img src="${logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px; border-radius: ${styles.logoRadius}px;" /></div>`;
+  }
+  
+  // Text content
+  html += '<div>';
+  if (fullName) html += `<div style="font-size: ${styles.nameSize}px; font-weight: ${styles.nameWeight}; color: ${styles.nameColor}; font-family: ${styles.nameFont}; margin-bottom: 4px;">${fullName}</div>`;
+  if (jobTitle) html += `<div style="font-size: ${styles.roleSize}px; font-weight: ${styles.roleWeight}; color: ${styles.roleColor}; font-family: ${styles.roleFont}; margin-bottom: 4px;">${jobTitle}</div>`;
+  if (company) html += `<div style="font-size: ${styles.companySize}px; font-weight: ${styles.companyWeight}; color: ${styles.companyColor}; font-family: ${styles.companyFont}; margin-bottom: 8px;">${company}</div>`;
+  
+  // Contact info
+  const contacts = [];
+  if (email) contacts.push(`📧 <a href="mailto:${email}" style="color: ${styles.linkColor}; text-decoration: none;">${email}</a>`);
+  if (phone) contacts.push(`📞 <a href="tel:${phone}" style="color: ${styles.linkColor}; text-decoration: none;">${phone}</a>`);
+  if (website) contacts.push(`🌐 <a href="${website}" style="color: ${styles.linkColor}; text-decoration: none;">${website}</a>`);
+  
+  if (contacts.length > 0) {
+    html += `<div style="font-size: ${styles.contactSize}px; font-weight: ${styles.contactWeight}; color: ${styles.contactColor}; font-family: ${styles.contactFont}; margin-bottom: 8px;">${contacts.join('<br>')}</div>`;
+  }
+  
+  // Social links
+  const socials = [];
+  if (linkedIn) socials.push(`<a href="${linkedIn}" style="color: ${styles.linkColor}; text-decoration: none;">LinkedIn</a>`);
+  if (twitter) socials.push(`<a href="${twitter}" style="color: ${styles.linkColor}; text-decoration: none;">Twitter</a>`);
+  if (instagram) socials.push(`<a href="${instagram}" style="color: ${styles.linkColor}; text-decoration: none;">Instagram</a>`);
+  
+  if (socials.length > 0) {
+    html += `<div style="font-size: ${styles.contactSize}px; font-weight: ${styles.contactWeight}; color: ${styles.contactColor}; font-family: ${styles.contactFont};">${socials.join(' | ')}</div>`;
+  }
+  
+  html += '</div>'; // Close text content div
+  html += '</div>'; // Close main flex div
+  
+  // Promotional image
+  if (promotionalImage) {
+    if (promotionalLink) {
+      html += `<div style="margin-top: 15px;"><a href="${promotionalLink}" target="_blank"><img src="${promotionalImage}" alt="Promotional Banner" style="max-width: 100%; height: ${styles.promoHeight}px; object-fit: cover;" /></a></div>`;
+    } else {
+      html += `<div style="margin-top: 15px;"><img src="${promotionalImage}" alt="Promotional Banner" style="max-width: 100%; height: ${styles.promoHeight}px; object-fit: cover;" /></div>`;
+    }
+  }
+  
+  html += '</div>';
+  return html;
+}
+
 // Function to generate HTML content from form data
 function generateHtmlFromFormData(data: TemplateFormData): string {
   const { fullName, jobTitle, company, email, phone, website, linkedIn, twitter, instagram, logoUrl, promotionalImage, promotionalLink } = data;
@@ -83,7 +139,7 @@ function generateHtmlFromFormData(data: TemplateFormData): string {
   
   // Logo section
   if (logoUrl) {
-    html += `<div style="padding-right: 20px;"><img src="${logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px;" /></div>`;
+    html += `<div style="padding-right: 20px;"><img src="${logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px; border-radius: 0px;" /></div>`;
   }
   
   // Text content
@@ -148,6 +204,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
     spacing: 8,
     padding: 0,
     logoRadius: 0,
+    logoSpacing: 20,
     promoHeight: 80
   });
   const [editingElement, setEditingElement] = useState<string | null>(null);
@@ -373,7 +430,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         promotionalImage,
         promotionalLink,
         content: signatureFields, // Store signature fields in content JSON
-        htmlContent: generateHtmlFromFormData(data), // Generate HTML preview
+        htmlContent: generateHtmlWithCustomStyles(data, customStyles), // Generate HTML preview with custom styles
       };
       
       return apiRequest(method, url, templateData);
@@ -435,7 +492,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
             <div 
               onClick={() => setEditingElement(editingElement === 'logo' ? null : 'logo')}
               style={{ 
-                paddingRight: '20px', 
+                paddingRight: customStyles.logoSpacing + 'px', 
                 verticalAlign: 'top',
                 cursor: 'pointer',
                 padding: '2px',
@@ -906,17 +963,30 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
           
           {/* Logo/Image Controls */}
           {editingElement === 'logo' && (
-            <div>
-              <Label className="text-xs text-blue-700">Corner Radius: {customStyles.logoRadius}px</Label>
-              <input
-                type="range"
-                min="0"
-                max="20"
-                value={customStyles.logoRadius}
-                onChange={(e) => setCustomStyles({...customStyles, logoRadius: parseInt(e.target.value)})}
-                className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
+            <>
+              <div>
+                <Label className="text-xs text-blue-700">Corner Radius: {customStyles.logoRadius}px</Label>
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  value={customStyles.logoRadius}
+                  onChange={(e) => setCustomStyles({...customStyles, logoRadius: parseInt(e.target.value)})}
+                  className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-blue-700">Spacing: {customStyles.logoSpacing}px</Label>
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  value={customStyles.logoSpacing}
+                  onChange={(e) => setCustomStyles({...customStyles, logoSpacing: parseInt(e.target.value)})}
+                  className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            </>
           )}
           
           {/* Promotional Image Controls */}
