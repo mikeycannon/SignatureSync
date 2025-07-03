@@ -152,6 +152,8 @@ Complete Docker configuration for development environment with:
 - July 02, 2025. Implemented click-to-edit interface - users can click any element in the preview to open compact style controls, made Custom the default formatting option for better user experience
 - July 02, 2025. Attempted sticky preview implementation - successfully changed grid layout from 8/4 to 6/6 split (50/50), increased preview height by 20%, and made signature editor fields display in 2-column layout, but encountered persistent JSX syntax errors preventing successful deployment of sticky positioning feature
 - July 02, 2025. Enhanced template editor with comprehensive font customization and style-as-defaults system - replaced URL inputs with direct image upload, added font family and weight options for all text elements, implemented style defaults that apply when selecting formatting options while preserving click-to-edit functionality, changed "Promotional" to "Promo" for better mobile display
+- July 02, 2025. Fixed mobile navigation across all pages - added mobile menu state management and overlay functionality to Templates, Template Editor, and Assets pages for consistent hamburger menu behavior
+- July 02, 2025. Fixed authentication error in Assets page upload - added missing Authorization header with JWT token to resolve "Authentication required" error during file uploads
 
 ## Deployment Options
 

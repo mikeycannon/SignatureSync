@@ -59,6 +59,9 @@ export default function Assets() {
       const response = await fetch('/api/assets/upload', {
         method: 'POST',
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
         credentials: 'include',
       });
 
