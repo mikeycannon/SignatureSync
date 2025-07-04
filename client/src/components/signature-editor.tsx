@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -271,6 +271,23 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
     URL.revokeObjectURL(url);
   };
 
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+
+  // Helper to find a block by id (recursive)
+  const findBlockById = useCallback((blocks: SignatureBlock[], id: string | null): SignatureBlock | null => {
+    if (!id) return null;
+    for (const block of blocks) {
+      if (block.id === id) return block;
+      if (block.children) {
+        const found = findBlockById(block.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }, []);
+
+  const selectedBlock = useMemo(() => findBlockById(blocks, selectedBlockId), [blocks, selectedBlockId, findBlockById]);
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto p-6">
       {/* Sidebar Palette */}
@@ -398,6 +415,9 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
           </CardContent>
         </Card>
       </aside>
+
+      {/* Render the block style panel */}
+      <BlockStylePanel />
     </div>
   );
 }
@@ -417,7 +437,7 @@ function NestedBlockRenderer({ block, updateBlockData }: { block: SignatureBlock
               className="absolute -right-4 top-1/2 -translate-y-1/2 z-10"
               onClick={() => {
                 // Insert a new column after this one
-                const newCol = { id: generateId(), type: 'column', data: {}, children: [] };
+                const newCol: SignatureBlock = { id: generateId(), type: 'column', data: {}, children: [] };
                 const newChildren = [...(block.children || [])];
                 newChildren.splice(idx + 1, 0, newCol);
                 // Update the row's children
@@ -463,13 +483,20 @@ function NestedBlockRenderer({ block, updateBlockData }: { block: SignatureBlock
     );
   }
   // Fallback to existing block renderer for leaf blocks
-  return <SignatureBlockRenderer block={block} updateBlockData={updateBlockData} />;
+  return <SignatureBlockRenderer block={block} updateBlockData={updateBlockData} onSelect={setSelectedBlockId} selectedBlockId={selectedBlockId} />;
 }
 
 // Block Renderer (rich text for text blocks)
-function SignatureBlockRenderer({ block, updateBlockData }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void }) {
+function SignatureBlockRenderer({ block, updateBlockData, onSelect, selectedBlockId }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void; onSelect?: (id: string) => void; selectedBlockId?: string | null }) {
   if (block.type === 'text') {
-    return <RichTextBlock block={block} updateBlockData={updateBlockData} />;
+    return (
+      <div
+        className={`border rounded p-3 bg-white cursor-pointer ${selectedBlockId === block.id ? 'ring-2 ring-blue-500' : ''}`}
+        onClick={(e) => { e.stopPropagation(); onSelect?.(block.id); }}
+      >
+        <RichTextBlock block={block} updateBlockData={updateBlockData} />
+      </div>
+    );
   }
   if (block.type === 'image' || block.type === 'logo') {
     return <ImageBlock block={block} updateBlockData={updateBlockData} />;
@@ -647,5 +674,93 @@ function ImageBlock({ block, updateBlockData }: { block: SignatureBlock; updateB
         </div>
       )}
     </div>
+  );
+}
+
+// Side panel for block styling
+function BlockStylePanel() {
+  if (!selectedBlock || selectedBlock.type !== 'text') return null;
+  const style = selectedBlock.data?.style || {};
+  return (
+    <aside className="w-80 p-4 border-l bg-white fixed right-0 top-0 h-full z-50 shadow-lg">
+      <h3 className="font-semibold mb-4">Text Styling</h3>
+      <div className="mb-3">
+        <label className="block text-xs mb-1">Font Family</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={style.fontFamily || ''}
+          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, fontFamily: e.target.value } })}
+        >
+          <option value="">Default</option>
+          <option value="Arial">Arial</option>
+          <option value="Helvetica">Helvetica</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Courier New">Courier New</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <label className="block text-xs mb-1">Font Size</label>
+        <input
+          type="number"
+          className="w-full border rounded px-2 py-1"
+          value={style.fontSize || ''}
+          min={8}
+          max={72}
+          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, fontSize: e.target.value } })}
+        />
+      </div>
+      <div className="mb-3">
+        <label className="block text-xs mb-1">Font Color</label>
+        <input
+          type="color"
+          className="w-8 h-8 border rounded"
+          value={style.color || '#222222'}
+          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, color: e.target.value } })}
+        />
+      </div>
+      <div className="mb-3 flex gap-2">
+        <Button size="sm" variant={style.fontWeight === 'bold' ? 'default' : 'outline'} onClick={() => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, fontWeight: style.fontWeight === 'bold' ? undefined : 'bold' } })}>B</Button>
+        <Button size="sm" variant={style.fontStyle === 'italic' ? 'default' : 'outline'} onClick={() => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, fontStyle: style.fontStyle === 'italic' ? undefined : 'italic' } })}>I</Button>
+        <Button size="sm" variant={style.textDecoration === 'underline' ? 'default' : 'outline'} onClick={() => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, textDecoration: style.textDecoration === 'underline' ? undefined : 'underline' } })}>U</Button>
+      </div>
+      <div className="mb-3">
+        <label className="block text-xs mb-1">Alignment</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={style.textAlign || ''}
+          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, textAlign: e.target.value } })}
+        >
+          <option value="">Default</option>
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <label className="block text-xs mb-1">Line Height</label>
+        <input
+          type="number"
+          className="w-full border rounded px-2 py-1"
+          value={style.lineHeight || ''}
+          min={1}
+          max={3}
+          step={0.1}
+          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, lineHeight: e.target.value } })}
+        />
+      </div>
+      <div className="mb-3">
+        <label className="block text-xs mb-1">Letter Spacing</label>
+        <input
+          type="number"
+          className="w-full border rounded px-2 py-1"
+          value={style.letterSpacing || ''}
+          min={-5}
+          max={20}
+          step={0.1}
+          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, letterSpacing: e.target.value } })}
+        />
+      </div>
+    </aside>
   );
 }
