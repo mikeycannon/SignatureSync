@@ -4,9 +4,11 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Text, Image as ImageIcon, Minus, Square, User, Briefcase, Mail, Phone } from 'lucide-react';
+import { Text, Image as ImageIcon, Minus, Square, User, Briefcase, Mail, Phone, Plus } from 'lucide-react';
 import { DndContext, useDraggable, DragEndEvent } from '@dnd-kit/core';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 const VARIABLE_OPTIONS = [
   { label: 'First Name', icon: <User className="w-4 h-4" /> },
@@ -28,6 +30,16 @@ interface Block {
   height: number;
   content: string;
   imageUrl?: string;
+  padding?: string;
+  margin?: string;
+  cornerRadius?: number;
+  fontFamily?: string;
+  fontSize?: number;
+  color?: string;
+  fontWeight?: 'bold' | 'normal';
+  fontStyle?: 'normal' | 'italic';
+  textDecoration?: 'none' | 'underline';
+  variable?: string;
 }
 
 const BLOCK_DEFAULTS: Record<BlockType, { width: number; height: number; content: string }> = {
@@ -63,6 +75,11 @@ export default function SignatureEditor() {
   const [editingValue, setEditingValue] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [imagePanelOpen, setImagePanelOpen] = useState(false);
+  const [imagePanelBlockId, setImagePanelBlockId] = useState<string | null>(null);
+  const [textPanelOpen, setTextPanelOpen] = useState(false);
+  const [textPanelBlockId, setTextPanelBlockId] = useState<string | null>(null);
+  const [variablePopoverOpen, setVariablePopoverOpen] = useState(false);
 
   // Add block handler
   const handleAddBlock = (type: BlockType) => {
@@ -167,26 +184,29 @@ export default function SignatureEditor() {
     }
   };
 
-  // Image upload
+  // Open image panel when image block is clicked
   const handleImageClick = (block: Block) => {
     setSelectedBlockId(block.id);
+    setImagePanelBlockId(block.id);
+    setImagePanelOpen(true);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
-      fileInputRef.current.click();
     }
   };
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setBlocks((prev) =>
-        prev.map((block) =>
-          block.id === selectedBlockId ? { ...block, imageUrl: ev.target?.result as string } : block
-        )
-      );
-    };
-    reader.readAsDataURL(file);
+
+  // Update image block properties
+  const updateImageBlock = (id: string, updates: Partial<Block>) => {
+    setBlocks((prev) => prev.map((block) => block.id === id ? { ...block, ...updates } : block));
+  };
+
+  // Delete image block from panel
+  const handleDeleteImageBlock = () => {
+    if (imagePanelBlockId) {
+      setBlocks((prev) => prev.filter((block) => block.id !== imagePanelBlockId));
+      setImagePanelBlockId(null);
+      setImagePanelOpen(false);
+      setSelectedBlockId(null);
+    }
   };
 
   // Block deletion
@@ -242,22 +262,44 @@ export default function SignatureEditor() {
     );
   };
 
+  // Open text panel when text block is clicked
+  const handleTextClick = (block: Block) => {
+    setSelectedBlockId(block.id);
+    setTextPanelBlockId(block.id);
+    setTextPanelOpen(true);
+  };
+
+  // Update text block properties
+  const updateTextBlock = (id: string, updates: Partial<Block>) => {
+    setBlocks((prev) => prev.map((block) => block.id === id ? { ...block, ...updates } : block));
+  };
+
+  // Delete text block from panel
+  const handleDeleteTextBlock = () => {
+    if (textPanelBlockId) {
+      setBlocks((prev) => prev.filter((block) => block.id !== textPanelBlockId));
+      setTextPanelBlockId(null);
+      setTextPanelOpen(false);
+      setSelectedBlockId(null);
+    }
+  };
+
   // Simple HTML generator for preview/export
   const generateHtml = () => {
     return `
       <div style="font-family: Arial, sans-serif;">
         ${blocks.map(block => {
           if (block.type === 'text') {
-            return `<div style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;">${block.content}</div>`;
+            return `<div style=\"position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;\">${block.content}</div>`;
           }
           if (block.type === 'image' && block.imageUrl) {
-            return `<img src="${block.imageUrl}" style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;object-fit:contain;" />`;
+            return `<img src=\"${block.imageUrl}\" style=\"position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;object-fit:contain;\" />`;
           }
           if (block.type === 'line') {
-            return `<div style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:2px;background:#222;"></div>`;
+            return `<div style=\"position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:2px;background:#222;\"></div>`;
           }
           if (block.type === 'rectangle') {
-            return `<div style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;background:#facc15;"></div>`;
+            return `<div style=\"position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;background:#facc15;\"></div>`;
           }
           return '';
         }).join('')}
@@ -279,10 +321,32 @@ export default function SignatureEditor() {
 
   // Save (placeholder)
   const handleSave = () => {
-    // Replace with real save logic or API call
     const html = generateHtml();
     alert('Signature saved! (implement real save logic)');
     // Example: onSave({ blocks, html })
+  };
+
+  // Add variable text block
+  const handleAddVariableBlock = (variableLabel: string) => {
+    const { x, y } = getRandomPosition();
+    const newBlock = {
+      id: generateId(),
+      type: 'text',
+      x,
+      y,
+      width: 180,
+      height: 40,
+      content: `{{${variableLabel}}}`,
+      variable: variableLabel,
+      fontFamily: 'Arial',
+      fontSize: 16,
+      color: '#000000',
+    };
+    setBlocks((prev) => [...prev, newBlock]);
+    setSelectedBlockId(newBlock.id);
+    setTextPanelBlockId(newBlock.id);
+    setTextPanelOpen(true);
+    setVariablePopoverOpen(false);
   };
 
   return (
@@ -302,23 +366,28 @@ export default function SignatureEditor() {
           <Square className="w-4 h-4" /> Add Rectangle
         </Button>
         <span className="mx-2 text-gray-300">|</span>
-        {VARIABLE_OPTIONS.map((v) => (
-          <Button
-            key={v.label}
-            variant="ghost"
-            size="sm"
-            className="flex gap-1 items-center"
-            onClick={() => handleInsertVariable(v.label)}
-            disabled={
-              !(
-                (selectedBlockId && blocks.find(b => b.id === selectedBlockId && b.type === 'text')) ||
-                (editingBlockId && blocks.find(b => b.id === editingBlockId && b.type === 'text'))
-              )
-            }
-          >
-            {v.icon} {v.label}
-          </Button>
-        ))}
+        <Popover open={variablePopoverOpen} onOpenChange={setVariablePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="flex gap-2 items-center">
+              <Plus className="w-4 h-4" /> Add Variables
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-2">
+            <div className="flex flex-col gap-1">
+              {VARIABLE_OPTIONS.map((v) => (
+                <Button
+                  key={v.label}
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  onClick={() => handleAddVariableBlock(v.label)}
+                >
+                  {v.icon} {v.label}
+                </Button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </Card>
 
       {/* Canvas Area */}
@@ -358,6 +427,7 @@ export default function SignatureEditor() {
               onTextEditBlur={handleTextEditBlur}
               onTextEditKeyDown={handleTextEditKeyDown}
               onImageClick={handleImageClick}
+              onTextClick={handleTextClick}
             />
           ))}
           {/* Hidden file input for image upload */}
@@ -386,6 +456,217 @@ export default function SignatureEditor() {
           />
         </DialogContent>
       </Dialog>
+      <Dialog open={imagePanelOpen && !!imagePanelBlockId} onOpenChange={(open) => {
+        setImagePanelOpen(open);
+        if (!open) setImagePanelBlockId(null);
+      }}>
+        <DialogContent style={{ minWidth: 340, maxWidth: 400 }}>
+          {(() => {
+            const block = blocks.find(b => b.id === imagePanelBlockId && b.type === 'image');
+            if (!block) return null;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>image Element</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      value={block.x}
+                      min={0}
+                      onChange={e => updateImageBlock(block.id, { x: Number(e.target.value) })}
+                      style={{ width: 80 }}
+                    />
+                    <Input
+                      type="number"
+                      value={block.y}
+                      min={0}
+                      onChange={e => updateImageBlock(block.id, { y: Number(e.target.value) })}
+                      style={{ width: 80 }}
+                    />
+                  </div>
+                  <div className="font-semibold text-sm mt-2">Image Source</div>
+                  <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    Upload Image
+                  </Button>
+                  <div className="text-xs text-gray-500">Or choose from assets:</div>
+                  <div className="w-full h-16 bg-gray-100 border rounded flex items-center justify-center text-gray-400">
+                    (Asset picker placeholder)
+                  </div>
+                  <div className="font-semibold text-sm mt-2">Size</div>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      value={block.width}
+                      min={10}
+                      onChange={e => updateImageBlock(block.id, { width: Number(e.target.value) })}
+                      style={{ width: 80 }}
+                    />
+                    <Input
+                      type="number"
+                      value={block.height}
+                      min={10}
+                      onChange={e => updateImageBlock(block.id, { height: Number(e.target.value) })}
+                      style={{ width: 80 }}
+                    />
+                  </div>
+                  <div className="font-semibold text-sm mt-2">Styling</div>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={block.padding ?? ''}
+                      placeholder="Padding"
+                      onChange={e => updateImageBlock(block.id, { padding: e.target.value })}
+                      style={{ width: 80 }}
+                    />
+                    <Input
+                      type="text"
+                      value={block.margin ?? ''}
+                      placeholder="Margin"
+                      onChange={e => updateImageBlock(block.id, { margin: e.target.value })}
+                      style={{ width: 80 }}
+                    />
+                  </div>
+                  <Input
+                    type="number"
+                    value={block.cornerRadius ?? 0}
+                    min={0}
+                    max={100}
+                    placeholder="Corner Radius"
+                    onChange={e => updateImageBlock(block.id, { cornerRadius: Number(e.target.value) })}
+                  />
+                  <Button variant="destructive" className="mt-4" onClick={handleDeleteImageBlock}>
+                    Delete Element
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={textPanelOpen && !!textPanelBlockId} onOpenChange={(open) => {
+        setTextPanelOpen(open);
+        if (!open) setTextPanelBlockId(null);
+      }}>
+        <DialogContent style={{ minWidth: 340, maxWidth: 400 }}>
+          {(() => {
+            const block = blocks.find(b => b.id === textPanelBlockId && b.type === 'text');
+            if (!block) return null;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Text Element</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col gap-3">
+                  <div className="font-semibold text-sm mt-2">Text</div>
+                  <Input
+                    type="text"
+                    value={block.content}
+                    onChange={e => updateTextBlock(block.id, { content: e.target.value })}
+                  />
+                  <div className="font-semibold text-sm mt-2">Typography</div>
+                  <div className="flex gap-2">
+                    <select
+                      value={block.fontFamily || 'Arial'}
+                      onChange={e => updateTextBlock(block.id, { fontFamily: e.target.value })}
+                      className="border rounded px-2 py-1"
+                    >
+                      <option value="Arial">Arial</option>
+                      <option value="Helvetica">Helvetica</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Courier New">Courier New</option>
+                    </select>
+                    <Input
+                      type="number"
+                      value={block.fontSize || 14}
+                      min={8}
+                      max={72}
+                      onChange={e => updateTextBlock(block.id, { fontSize: Number(e.target.value) })}
+                      style={{ width: 80 }}
+                    />
+                  </div>
+                  <div className="flex gap-2 items-center mt-2">
+                    <label className="text-xs">Color</label>
+                    <input
+                      type="color"
+                      value={block.color || '#000000'}
+                      onChange={e => updateTextBlock(block.id, { color: e.target.value })}
+                      style={{ width: 32, height: 32, border: 'none', background: 'none' }}
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      size="sm"
+                      variant={block.fontWeight === 'bold' ? 'default' : 'outline'}
+                      onClick={() => updateTextBlock(block.id, { fontWeight: block.fontWeight === 'bold' ? undefined : 'bold' })}
+                    >
+                      B
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={block.fontStyle === 'italic' ? 'default' : 'outline'}
+                      onClick={() => updateTextBlock(block.id, { fontStyle: block.fontStyle === 'italic' ? undefined : 'italic' })}
+                    >
+                      I
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={block.textDecoration === 'underline' ? 'default' : 'outline'}
+                      onClick={() => updateTextBlock(block.id, { textDecoration: block.textDecoration === 'underline' ? undefined : 'underline' })}
+                    >
+                      U
+                    </Button>
+                  </div>
+                  <div className="font-semibold text-sm mt-2">Styling</div>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={block.padding ?? ''}
+                      placeholder="Padding"
+                      onChange={e => updateTextBlock(block.id, { padding: e.target.value })}
+                      style={{ width: 80 }}
+                    />
+                    <Input
+                      type="text"
+                      value={block.margin ?? ''}
+                      placeholder="Margin"
+                      onChange={e => updateTextBlock(block.id, { margin: e.target.value })}
+                      style={{ width: 80 }}
+                    />
+                  </div>
+                  <Input
+                    type="number"
+                    value={block.cornerRadius ?? 0}
+                    min={0}
+                    max={100}
+                    placeholder="Corner Radius"
+                    onChange={e => updateTextBlock(block.id, { cornerRadius: Number(e.target.value) })}
+                  />
+                  {block.variable ? (
+                    <div className="flex flex-col gap-2 mt-2">
+                      <label className="text-xs font-semibold">Variable</label>
+                      <select
+                        value={block.variable}
+                        onChange={e => updateTextBlock(block.id, { variable: e.target.value, content: `{{${e.target.value}}}` })}
+                        className="border rounded px-2 py-1"
+                      >
+                        {VARIABLE_OPTIONS.map(v => (
+                          <option key={v.label} value={v.label}>{v.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                  <Button variant="destructive" className="mt-4" onClick={handleDeleteTextBlock}>
+                    Delete Element
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -402,6 +683,7 @@ function DraggableBlock({
   onTextEditBlur,
   onTextEditKeyDown,
   onImageClick,
+  onTextClick,
 }: {
   block: Block;
   selected: boolean;
@@ -414,6 +696,7 @@ function DraggableBlock({
   onTextEditBlur: () => void;
   onTextEditKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onImageClick: (block: Block) => void;
+  onTextClick: (block: Block) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: block.id,
