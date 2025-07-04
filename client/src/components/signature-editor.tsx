@@ -48,6 +48,15 @@ function generateId() {
 
 export default function SignatureEditor() {
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [resizeState, setResizeState] = useState<{
+    blockId: string | null;
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+    corner: string | null;
+  }>({ blockId: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0, corner: null });
 
   // Add block handler
   const handleAddBlock = (type: BlockType) => {
@@ -75,6 +84,57 @@ export default function SignatureEditor() {
       )
     );
   };
+
+  // Mouse events for resizing
+  const handleResizeMouseDown = (e: React.MouseEvent, block: Block, corner: string) => {
+    e.stopPropagation();
+    setResizeState({
+      blockId: block.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: block.width,
+      startHeight: block.height,
+      corner,
+    });
+    document.body.style.cursor = 'nwse-resize';
+  };
+
+  React.useEffect(() => {
+    if (!resizeState.blockId) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      setBlocks((prev) =>
+        prev.map((block) => {
+          if (block.id !== resizeState.blockId) return block;
+          let newWidth = resizeState.startWidth;
+          let newHeight = resizeState.startHeight;
+          if (resizeState.corner === 'se') {
+            newWidth = Math.max(20, resizeState.startWidth + (e.clientX - resizeState.startX));
+            newHeight = Math.max(20, resizeState.startHeight + (e.clientY - resizeState.startY));
+          } else if (resizeState.corner === 'sw') {
+            newWidth = Math.max(20, resizeState.startWidth - (e.clientX - resizeState.startX));
+            newHeight = Math.max(20, resizeState.startHeight + (e.clientY - resizeState.startY));
+          } else if (resizeState.corner === 'ne') {
+            newWidth = Math.max(20, resizeState.startWidth + (e.clientX - resizeState.startX));
+            newHeight = Math.max(20, resizeState.startHeight - (e.clientY - resizeState.startY));
+          } else if (resizeState.corner === 'nw') {
+            newWidth = Math.max(20, resizeState.startWidth - (e.clientX - resizeState.startX));
+            newHeight = Math.max(20, resizeState.startHeight - (e.clientY - resizeState.startY));
+          }
+          return { ...block, width: newWidth, height: newHeight };
+        })
+      );
+    };
+    const handleMouseUp = () => {
+      setResizeState({ blockId: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0, corner: null });
+      document.body.style.cursor = '';
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [resizeState]);
 
   return (
     <div className="flex flex-col w-full h-full p-6 gap-6">
@@ -116,7 +176,13 @@ export default function SignatureEditor() {
           </div>
           {/* Render blocks */}
           {blocks.map((block) => (
-            <DraggableBlock key={block.id} block={block} />
+            <DraggableBlock
+              key={block.id}
+              block={block}
+              selected={block.id === selectedBlockId}
+              onSelect={() => setSelectedBlockId(block.id)}
+              onResizeHandle={handleResizeMouseDown}
+            />
           ))}
         </div>
       </DndContext>
@@ -124,7 +190,12 @@ export default function SignatureEditor() {
   );
 }
 
-function DraggableBlock({ block }: { block: Block }) {
+function DraggableBlock({ block, selected, onSelect, onResizeHandle }: {
+  block: Block;
+  selected: boolean;
+  onSelect: () => void;
+  onResizeHandle: (e: React.MouseEvent, block: Block, corner: string) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: block.id,
   });
@@ -137,19 +208,59 @@ function DraggableBlock({ block }: { block: Block }) {
     zIndex: isDragging ? 10 : 1,
     cursor: 'move',
     background: block.type === 'rectangle' ? '#facc15' : 'white',
-    border: '1px solid #d1d5db',
+    border: selected ? '2px solid #2563eb' : '1px solid #d1d5db',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: isDragging ? '0 2px 8px rgba(0,0,0,0.12)' : undefined,
     userSelect: 'none',
+    transition: 'border 0.1s',
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onMouseDown={onSelect}
+    >
       {block.type === 'text' && <span style={{ fontSize: 16 }}>{block.content}</span>}
       {block.type === 'image' && <ImageIcon className="w-8 h-8 text-gray-400" />}
       {block.type === 'line' && <div style={{ width: '100%', height: 2, background: '#222' }} />}
       {block.type === 'rectangle' && <span style={{ color: '#222', fontWeight: 500 }}>Rect</span>}
+      {/* Resize handles (corners) */}
+      {selected && (
+        <>
+          <ResizeHandle corner="nw" onMouseDown={(e) => onResizeHandle(e, block, 'nw')} />
+          <ResizeHandle corner="ne" onMouseDown={(e) => onResizeHandle(e, block, 'ne')} />
+          <ResizeHandle corner="sw" onMouseDown={(e) => onResizeHandle(e, block, 'sw')} />
+          <ResizeHandle corner="se" onMouseDown={(e) => onResizeHandle(e, block, 'se')} />
+        </>
+      )}
     </div>
+  );
+}
+
+function ResizeHandle({ corner, onMouseDown }: { corner: string; onMouseDown: (e: React.MouseEvent) => void }) {
+  const positions: Record<string, React.CSSProperties> = {
+    nw: { left: -6, top: -6, cursor: 'nwse-resize' },
+    ne: { right: -6, top: -6, cursor: 'nesw-resize' },
+    sw: { left: -6, bottom: -6, cursor: 'nesw-resize' },
+    se: { right: -6, bottom: -6, cursor: 'nwse-resize' },
+  };
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        width: 12,
+        height: 12,
+        background: '#fff',
+        border: '2px solid #2563eb',
+        borderRadius: 4,
+        zIndex: 20,
+        ...positions[corner],
+      }}
+      onMouseDown={onMouseDown}
+    />
   );
 }
