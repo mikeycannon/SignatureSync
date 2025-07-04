@@ -430,7 +430,7 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
         promotionalImage,
         promotionalLink,
         content: signatureFields, // Store signature fields in content JSON
-        htmlContent: generateHtmlWithCustomStyles(data, customStyles), // Generate HTML preview with custom styles
+        htmlContent: generateHtmlFromFormData(data), // Generate HTML preview
       };
       
       return apiRequest(method, url, templateData);
@@ -477,6 +477,19 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
   }, [template, form]);
 
   const handleSave = (data: TemplateFormData) => {
+    console.log("Form data being saved:", data);
+    console.log("Form errors:", form.formState.errors);
+    
+    // Check if fullName is empty and provide a default
+    if (!data.fullName || data.fullName.trim() === "") {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a full name for the signature.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     mutation.mutate(data);
   };
 
