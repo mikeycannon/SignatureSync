@@ -327,6 +327,28 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
                 </div>
               </SortableContext>
             </DndContext>
+            <div className="flex gap-2 mt-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                setBlocks((prev) => [
+                  ...prev,
+                  {
+                    id: generateId(),
+                    type: 'row',
+                    data: {},
+                    children: [
+                      {
+                        id: generateId(),
+                        type: 'column',
+                        data: {},
+                        children: [],
+                      },
+                    ],
+                  },
+                ]);
+              }}>
+                + Add Row
+              </Button>
+            </div>
           </CardContent>
         </Card>
         {/* Save/Cancel Buttons */}
@@ -384,9 +406,27 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
 function NestedBlockRenderer({ block, updateBlockData }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void }) {
   if (block.type === 'row') {
     return (
-      <div className="flex flex-row border rounded mb-2">
-        {(block.children || []).map((child) => (
-          <NestedBlockRenderer key={child.id} block={child} updateBlockData={updateBlockData} />
+      <div className="flex flex-row border rounded mb-2 items-stretch">
+        {(block.children || []).map((child, idx) => (
+          <div key={child.id} className="relative flex-1 flex flex-col">
+            <NestedBlockRenderer block={child} updateBlockData={updateBlockData} />
+            {/* Add Column button for each column */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute -right-4 top-1/2 -translate-y-1/2 z-10"
+              onClick={() => {
+                // Insert a new column after this one
+                const newCol = { id: generateId(), type: 'column', data: {}, children: [] };
+                const newChildren = [...(block.children || [])];
+                newChildren.splice(idx + 1, 0, newCol);
+                // Update the row's children
+                updateBlockData(block.id, { ...block.data, children: newChildren });
+              }}
+            >
+              +
+            </Button>
+          </div>
         ))}
       </div>
     );
