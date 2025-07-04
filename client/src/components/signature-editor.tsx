@@ -1,7 +1,7 @@
 // Signature Editor - Rebuild in progress
 // This file will be rebuilt to provide a freeform, canvas-style email signature editor inspired by signature-canvas-craft, using only existing project components and dependencies.
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Text, Image as ImageIcon, Minus, Square, User, Briefcase, Mail, Phone } from 'lucide-react';
@@ -26,6 +26,7 @@ interface Block {
   width: number;
   height: number;
   content: string;
+  imageUrl?: string;
 }
 
 const BLOCK_DEFAULTS: Record<BlockType, { width: number; height: number; content: string }> = {
@@ -57,6 +58,9 @@ export default function SignatureEditor() {
     startHeight: number;
     corner: string | null;
   }>({ blockId: null, startX: 0, startY: 0, startWidth: 0, startHeight: 0, corner: null });
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Add block handler
   const handleAddBlock = (type: BlockType) => {
@@ -136,6 +140,53 @@ export default function SignatureEditor() {
     };
   }, [resizeState]);
 
+  // Inline text editing
+  const handleTextDoubleClick = (block: Block) => {
+    setEditingBlockId(block.id);
+    setEditingValue(block.content);
+  };
+  const handleTextEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingValue(e.target.value);
+  };
+  const handleTextEditBlur = () => {
+    if (editingBlockId) {
+      setBlocks((prev) =>
+        prev.map((block) =>
+          block.id === editingBlockId ? { ...block, content: editingValue } : block
+        )
+      );
+    }
+    setEditingBlockId(null);
+    setEditingValue('');
+  };
+  const handleTextEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleTextEditBlur();
+    }
+  };
+
+  // Image upload
+  const handleImageClick = (block: Block) => {
+    setSelectedBlockId(block.id);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setBlocks((prev) =>
+        prev.map((block) =>
+          block.id === selectedBlockId ? { ...block, imageUrl: ev.target?.result as string } : block
+        )
+      );
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="flex flex-col w-full h-full p-6 gap-6">
       {/* Toolbar */}
@@ -182,19 +233,53 @@ export default function SignatureEditor() {
               selected={block.id === selectedBlockId}
               onSelect={() => setSelectedBlockId(block.id)}
               onResizeHandle={handleResizeMouseDown}
+              onTextDoubleClick={handleTextDoubleClick}
+              editing={editingBlockId === block.id}
+              editingValue={editingValue}
+              onTextEditChange={handleTextEditChange}
+              onTextEditBlur={handleTextEditBlur}
+              onTextEditKeyDown={handleTextEditKeyDown}
+              onImageClick={handleImageClick}
             />
           ))}
+          {/* Hidden file input for image upload */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleImageChange}
+          />
         </div>
       </DndContext>
     </div>
   );
 }
 
-function DraggableBlock({ block, selected, onSelect, onResizeHandle }: {
+function DraggableBlock({
+  block,
+  selected,
+  onSelect,
+  onResizeHandle,
+  onTextDoubleClick,
+  editing,
+  editingValue,
+  onTextEditChange,
+  onTextEditBlur,
+  onTextEditKeyDown,
+  onImageClick,
+}: {
   block: Block;
   selected: boolean;
   onSelect: () => void;
   onResizeHandle: (e: React.MouseEvent, block: Block, corner: string) => void;
+  onTextDoubleClick: (block: Block) => void;
+  editing: boolean;
+  editingValue: string;
+  onTextEditChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTextEditBlur: () => void;
+  onTextEditKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onImageClick: (block: Block) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: block.id,
@@ -215,6 +300,7 @@ function DraggableBlock({ block, selected, onSelect, onResizeHandle }: {
     boxShadow: isDragging ? '0 2px 8px rgba(0,0,0,0.12)' : undefined,
     userSelect: 'none',
     transition: 'border 0.1s',
+    overflow: 'hidden',
   };
   return (
     <div
@@ -223,9 +309,27 @@ function DraggableBlock({ block, selected, onSelect, onResizeHandle }: {
       {...attributes}
       {...listeners}
       onMouseDown={onSelect}
+      onDoubleClick={block.type === 'text' ? () => onTextDoubleClick(block) : undefined}
+      onClick={block.type === 'image' ? () => onImageClick(block) : undefined}
     >
-      {block.type === 'text' && <span style={{ fontSize: 16 }}>{block.content}</span>}
-      {block.type === 'image' && <ImageIcon className="w-8 h-8 text-gray-400" />}
+      {block.type === 'text' && editing ? (
+        <input
+          type="text"
+          value={editingValue}
+          onChange={onTextEditChange}
+          onBlur={onTextEditBlur}
+          onKeyDown={onTextEditKeyDown}
+          autoFocus
+          style={{ fontSize: 16, width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', textAlign: 'center' }}
+        />
+      ) : block.type === 'text' ? (
+        <span style={{ fontSize: 16 }}>{block.content}</span>
+      ) : null}
+      {block.type === 'image' && block.imageUrl ? (
+        <img src={block.imageUrl} alt="Uploaded" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+      ) : block.type === 'image' ? (
+        <ImageIcon className="w-8 h-8 text-gray-400" />
+      ) : null}
       {block.type === 'line' && <div style={{ width: '100%', height: 2, background: '#222' }} />}
       {block.type === 'rectangle' && <span style={{ color: '#222', fontWeight: 500 }}>Rect</span>}
       {/* Resize handles (corners) */}
@@ -264,3 +368,5 @@ function ResizeHandle({ corner, onMouseDown }: { corner: string; onMouseDown: (e
     />
   );
 }
+
+export { SignatureEditor };
