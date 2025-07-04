@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Text, Image as ImageIcon, Minus, Square, User, Briefcase, Mail, Phone } from 'lucide-react';
 import { DndContext, useDraggable, DragEndEvent } from '@dnd-kit/core';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const VARIABLE_OPTIONS = [
   { label: 'First Name', icon: <User className="w-4 h-4" /> },
@@ -61,6 +62,7 @@ export default function SignatureEditor() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Add block handler
   const handleAddBlock = (type: BlockType) => {
@@ -240,6 +242,49 @@ export default function SignatureEditor() {
     );
   };
 
+  // Simple HTML generator for preview/export
+  const generateHtml = () => {
+    return `
+      <div style="font-family: Arial, sans-serif;">
+        ${blocks.map(block => {
+          if (block.type === 'text') {
+            return `<div style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;">${block.content}</div>`;
+          }
+          if (block.type === 'image' && block.imageUrl) {
+            return `<img src="${block.imageUrl}" style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;object-fit:contain;" />`;
+          }
+          if (block.type === 'line') {
+            return `<div style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:2px;background:#222;"></div>`;
+          }
+          if (block.type === 'rectangle') {
+            return `<div style="position:absolute;left:${block.x}px;top:${block.y}px;width:${block.width}px;height:${block.height}px;background:#facc15;"></div>`;
+          }
+          return '';
+        }).join('')}
+      </div>
+    `;
+  };
+
+  // Export HTML
+  const handleExportHtml = () => {
+    const html = generateHtml();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'signature.html';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Save (placeholder)
+  const handleSave = () => {
+    // Replace with real save logic or API call
+    const html = generateHtml();
+    alert('Signature saved! (implement real save logic)');
+    // Example: onSave({ blocks, html })
+  };
+
   return (
     <div className="flex flex-col w-full h-full p-6 gap-6">
       {/* Toolbar */}
@@ -325,6 +370,22 @@ export default function SignatureEditor() {
           />
         </div>
       </DndContext>
+
+      <div className="flex gap-2 mt-2">
+        <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>Preview</Button>
+        <Button variant="outline" size="sm" onClick={handleExportHtml}>Export HTML</Button>
+        <Button variant="default" size="sm" onClick={handleSave}>Save</Button>
+      </div>
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent style={{ minWidth: 400, minHeight: 300 }}>
+          <DialogHeader>
+            <DialogTitle>Signature Preview</DialogTitle>
+          </DialogHeader>
+          <div style={{ position: 'relative', width: 500, height: 300, background: '#fff', border: '1px solid #eee' }}
+            dangerouslySetInnerHTML={{ __html: generateHtml() }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
