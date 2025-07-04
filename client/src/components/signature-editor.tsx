@@ -349,6 +349,21 @@ export default function SignatureEditor() {
     setVariablePopoverOpen(false);
   };
 
+  // Image upload handler (fix ReferenceError)
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setBlocks((prev) =>
+        prev.map((block) =>
+          block.id === selectedBlockId ? { ...block, imageUrl: ev.target?.result as string } : block
+        )
+      );
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="flex flex-col w-full h-full p-6 gap-6">
       {/* Toolbar */}
