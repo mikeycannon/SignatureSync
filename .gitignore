@@ -4,6 +4,8 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+.env
+.env.*
 
 # Replit auto-generated files
 attached_assets/
