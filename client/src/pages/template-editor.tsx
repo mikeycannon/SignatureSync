@@ -51,7 +51,10 @@ const FORMATTING_OPTIONS = [
 ];
 
 // Schema for template form data
-const templateFormSchema = insertSignatureTemplateSchema.extend({
+const templateFormSchema = insertSignatureTemplateSchema.omit({
+  content: true,
+  htmlContent: true,
+}).extend({
   fullName: z.string().min(1, "Full name is required"),
   jobTitle: z.string().optional(),
   company: z.string().optional(),
