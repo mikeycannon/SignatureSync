@@ -187,6 +187,27 @@ export default function SignatureEditor() {
     reader.readAsDataURL(file);
   };
 
+  // Block deletion
+  const handleDeleteSelectedBlock = () => {
+    if (selectedBlockId) {
+      setBlocks((prev) => prev.filter((block) => block.id !== selectedBlockId));
+      setSelectedBlockId(null);
+      setEditingBlockId(null);
+    }
+  };
+
+  // Keyboard shortcut for delete
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedBlockId) {
+        e.preventDefault();
+        handleDeleteSelectedBlock();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedBlockId]);
+
   return (
     <div className="flex flex-col w-full h-full p-6 gap-6">
       {/* Toolbar */}
@@ -210,6 +231,15 @@ export default function SignatureEditor() {
           </Button>
         ))}
       </Card>
+
+      {/* Delete button for selected block */}
+      {selectedBlockId && (
+        <div style={{ position: 'absolute', top: 16, right: 32, zIndex: 100 }}>
+          <Button variant="destructive" size="sm" onClick={handleDeleteSelectedBlock}>
+            Delete Block
+          </Button>
+        </div>
+      )}
 
       {/* Canvas Area */}
       <DndContext onDragEnd={handleDragEnd}>
