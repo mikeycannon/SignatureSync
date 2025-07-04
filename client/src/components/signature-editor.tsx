@@ -437,6 +437,28 @@ function NestedBlockRenderer({ block, updateBlockData }: { block: SignatureBlock
         {(block.children || []).map((child) => (
           <NestedBlockRenderer key={child.id} block={child} updateBlockData={updateBlockData} />
         ))}
+        {/* Palette for adding content blocks */}
+        <div className="flex flex-wrap gap-2 mt-2">
+          {PALETTE.filter(p => !['row', 'column', 'cell'].includes(p.type)).map((item) => (
+            <Button
+              key={item.type}
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                // Add a new content block to this column
+                const newBlock: SignatureBlock = {
+                  id: generateId(),
+                  type: item.type as BlockType,
+                  data: {},
+                };
+                const newChildren = [...(block.children || []), newBlock];
+                updateBlockData(block.id, { ...block.data, children: newChildren });
+              }}
+            >
+              {item.icon} {item.label}
+            </Button>
+          ))}
+        </div>
       </div>
     );
   }
