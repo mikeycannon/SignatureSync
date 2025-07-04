@@ -35,12 +35,13 @@ interface SignatureEditorProps {
 }
 
 // Block Types
-export type BlockType = 'text' | 'image' | 'social' | 'logo' | 'legal' | 'contact';
+export type BlockType = 'row' | 'column' | 'cell' | 'text' | 'image' | 'social' | 'logo' | 'legal' | 'contact';
 
 export interface SignatureBlock {
   id: string;
   type: BlockType;
   data: any;
+  children?: SignatureBlock[];
 }
 
 const PALETTE: { type: BlockType; label: string; icon: React.ReactNode }[] = [
@@ -86,7 +87,23 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
     logo: initialData?.logo || "",
   });
 
-  const [blocks, setBlocks] = useState<SignatureBlock[]>([]);
+  // Start with a single row and column for the initial layout
+  const [blocks, setBlocks] = useState<SignatureBlock[]>([
+    {
+      id: generateId(),
+      type: 'row',
+      data: {},
+      children: [
+        {
+          id: generateId(),
+          type: 'column',
+          data: {},
+          children: [],
+        },
+      ],
+    },
+  ]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -209,34 +226,36 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, data } : b)));
   };
 
-  // Generate HTML from blocks
+  // Recursive HTML generation for nested blocks
   const generateHtmlFromBlocks = (blocks: SignatureBlock[]): string => {
-    return `
-      <div style="font-family: Arial, sans-serif; max-width: 500px;">
-        ${blocks
-          .map((block) => {
-            // Conditional logic: if block.data.conditionField, only show if user has value
-            if (block.data?.conditionField && !mockUser[block.data.conditionField]) return '';
-            switch (block.type) {
-              case 'text':
-                return `<div style=\"margin-bottom:8px;\">${renderVariables(block.data?.html || '', mockUser)}</div>`;
-              case 'image':
-                return block.data?.url ? `<div style=\"margin-bottom:8px;\"><img src=\"${block.data.url}\" alt=\"Image\" style=\"max-width:100%;height:auto;border-radius:4px;\" /></div>` : '';
-              case 'social':
-                return `<div style=\"margin-bottom:8px;\">[Social links]</div>`;
-              case 'logo':
-                return block.data?.url ? `<div style=\"margin-bottom:8px;\"><img src=\"${block.data.url}\" alt=\"Logo\" style=\"max-width:120px;height:auto;border-radius:8px;\" /></div>` : '';
-              case 'legal':
-                return `<div style=\"margin-bottom:8px; font-size:11px; color:#888;\">[Legal disclaimer]</div>`;
-              case 'contact':
-                return `<div style=\"margin-bottom:8px;\">${VARIABLE_OPTIONS.filter(v => v.value !== 'avatar').map(v => mockUser[v.value] ? `<div><b>${v.label}:</b> ${mockUser[v.value]}</div>` : '').join('')}</div>`;
-              default:
-                return '';
-            }
-          })
-          .join('')}
-      </div>
-    `;
+    const renderBlock = (block: SignatureBlock): string => {
+      if (block.type === 'row') {
+        return `<tr>${(block.children || []).map(renderBlock).join('')}</tr>`;
+      }
+      if (block.type === 'column') {
+        return `<td style="vertical-align:top;">${(block.children || []).map(renderBlock).join('')}</td>`;
+      }
+      // Leaf blocks
+      if (block.data?.conditionField && !mockUser[block.data.conditionField]) return '';
+      switch (block.type) {
+        case 'text':
+          return `<div style=\"margin-bottom:8px;\">${renderVariables(block.data?.html || '', mockUser)}</div>`;
+        case 'image':
+          return block.data?.url ? `<div style=\"margin-bottom:8px;\"><img src=\"${block.data.url}\" alt=\"Image\" style=\"max-width:100%;height:auto;border-radius:4px;\" /></div>` : '';
+        case 'social':
+          return `<div style=\"margin-bottom:8px;\">[Social links]</div>`;
+        case 'logo':
+          return block.data?.url ? `<div style=\"margin-bottom:8px;\"><img src=\"${block.data.url}\" alt=\"Logo\" style=\"max-width:120px;height:auto;border-radius:8px;\" /></div>` : '';
+        case 'legal':
+          return `<div style=\"margin-bottom:8px; font-size:11px; color:#888;\">[Legal disclaimer]</div>`;
+        case 'contact':
+          return `<div style=\"margin-bottom:8px;\">${VARIABLE_OPTIONS.filter(v => v.value !== 'avatar').map(v => mockUser[v.value] ? `<div><b>${v.label}:</b> ${mockUser[v.value]}</div>` : '').join('')}</div>`;
+        default:
+          return '';
+      }
+    };
+    // Wrap in table for email compatibility
+    return `<table cellpadding="0" cellspacing="0" border="0">${blocks.map(renderBlock).join('')}</table>`;
   };
 
   const htmlPreview = useMemo(() => generateHtmlFromBlocks(blocks), [blocks]);
@@ -299,7 +318,7 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
                     </div>
                   )}
                   {blocks.map((block) => (
-                    <SignatureBlockRenderer
+                    <NestedBlockRenderer
                       key={block.id}
                       block={block}
                       updateBlockData={updateBlockData}
@@ -359,6 +378,30 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
       </aside>
     </div>
   );
+}
+
+// Recursive renderer for nested blocks
+function NestedBlockRenderer({ block, updateBlockData }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void }) {
+  if (block.type === 'row') {
+    return (
+      <div className="flex flex-row border rounded mb-2">
+        {(block.children || []).map((child) => (
+          <NestedBlockRenderer key={child.id} block={child} updateBlockData={updateBlockData} />
+        ))}
+      </div>
+    );
+  }
+  if (block.type === 'column') {
+    return (
+      <div className="flex flex-col flex-1 border-l last:border-r rounded p-2 min-w-[120px]">
+        {(block.children || []).map((child) => (
+          <NestedBlockRenderer key={child.id} block={child} updateBlockData={updateBlockData} />
+        ))}
+      </div>
+    );
+  }
+  // Fallback to existing block renderer for leaf blocks
+  return <SignatureBlockRenderer block={block} updateBlockData={updateBlockData} />;
 }
 
 // Block Renderer (rich text for text blocks)
