@@ -339,6 +339,8 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
                       key={block.id}
                       block={block}
                       updateBlockData={updateBlockData}
+                      selectedBlockId={selectedBlockId}
+                      setSelectedBlockId={setSelectedBlockId}
                     />
                   ))}
                 </div>
@@ -417,19 +419,24 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
       </aside>
 
       {/* Render the block style panel */}
-      <BlockStylePanel />
+      <BlockStylePanel selectedBlock={selectedBlock} updateBlockData={updateBlockData} />
     </div>
   );
 }
 
 // Recursive renderer for nested blocks
-function NestedBlockRenderer({ block, updateBlockData }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void }) {
+function NestedBlockRenderer({ block, updateBlockData, selectedBlockId, setSelectedBlockId }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void; selectedBlockId: string | null; setSelectedBlockId: (id: string) => void }) {
   if (block.type === 'row') {
     return (
       <div className="flex flex-row border rounded mb-2 items-stretch">
         {(block.children || []).map((child, idx) => (
           <div key={child.id} className="relative flex-1 flex flex-col">
-            <NestedBlockRenderer block={child} updateBlockData={updateBlockData} />
+            <NestedBlockRenderer
+              block={child}
+              updateBlockData={updateBlockData}
+              selectedBlockId={selectedBlockId}
+              setSelectedBlockId={setSelectedBlockId}
+            />
             {/* Add Column button for each column */}
             <Button
               variant="ghost"
@@ -455,7 +462,13 @@ function NestedBlockRenderer({ block, updateBlockData }: { block: SignatureBlock
     return (
       <div className="flex flex-col flex-1 border-l last:border-r rounded p-2 min-w-[120px]">
         {(block.children || []).map((child) => (
-          <NestedBlockRenderer key={child.id} block={child} updateBlockData={updateBlockData} />
+          <NestedBlockRenderer
+            key={child.id}
+            block={child}
+            updateBlockData={updateBlockData}
+            selectedBlockId={selectedBlockId}
+            setSelectedBlockId={setSelectedBlockId}
+          />
         ))}
         {/* Palette for adding content blocks */}
         <div className="flex flex-wrap gap-2 mt-2">
@@ -678,7 +691,7 @@ function ImageBlock({ block, updateBlockData }: { block: SignatureBlock; updateB
 }
 
 // Side panel for block styling
-function BlockStylePanel() {
+function BlockStylePanel({ selectedBlock, updateBlockData }: { selectedBlock: SignatureBlock | null, updateBlockData: (id: string, data: any) => void }) {
   if (!selectedBlock || selectedBlock.type !== 'text') return null;
   const style = selectedBlock.data?.style || {};
   return (
