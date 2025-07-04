@@ -1105,10 +1105,15 @@ export default function TemplateEditor({ templateId }: TemplateEditorProps) {
                   </Select>
                   
                   <Button
-                    type="submit"
+                    type="button"
                     disabled={mutation.isPending}
                     className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
-                    onClick={form.handleSubmit(handleSave)}
+                    onClick={() => {
+                      console.log("Save button clicked");
+                      console.log("Form values:", form.getValues());
+                      console.log("Form errors:", form.formState.errors);
+                      form.handleSubmit(handleSave)();
+                    }}
                   >
                     <Save className="h-4 w-4 mr-2" />
                     {templateId ? 'Update' : 'Save'}
