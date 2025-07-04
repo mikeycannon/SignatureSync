@@ -30,6 +30,7 @@ import { TemplatePreviewModal } from "@/components/template-preview-modal";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { type SignatureTemplate } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function Templates() {
   const [selectedTemplate, setSelectedTemplate] = useState<SignatureTemplate | null>(null);
@@ -37,6 +38,11 @@ export default function Templates() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [versionModalOpen, setVersionModalOpen] = useState(false);
+  const [versionTemplate, setVersionTemplate] = useState<SignatureTemplate | null>(null);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [selectedVersion, setSelectedVersion] = useState<any | null>(null);
+  const [rollbackLoading, setRollbackLoading] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -76,12 +82,48 @@ export default function Templates() {
     window.location.href = `/templates/${template.id}/edit`;
   };
 
+  const handleShowVersions = async (template: SignatureTemplate) => {
+    setVersionTemplate(template);
+    setVersionModalOpen(true);
+    setSelectedVersion(null);
+    setRollbackLoading(false);
+    // Fetch versions
+    try {
+      const res = await apiRequest("GET", `/api/templates/${template.id}/versions`);
+      const json = res && typeof res.json === 'function' ? await res.json() : res;
+      setVersions(json?.data ?? json ?? []);
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to load version history", variant: "destructive" });
+      setVersions([]);
+    }
+  };
+
+  const handleRollback = async (version: any) => {
+    if (!versionTemplate) return;
+    if (!confirm(`Rollback to version ${version.version}? This will overwrite the current template.`)) return;
+    setRollbackLoading(true);
+    try {
+      await apiRequest("POST", `/api/templates/${versionTemplate.id}/rollback`, { version: version.version });
+      toast({ title: "Rolled back", description: `Template rolled back to version ${version.version}` });
+      setVersionModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to rollback", variant: "destructive" });
+    } finally {
+      setRollbackLoading(false);
+    }
+  };
+
   const handleDuplicateTemplate = async (template: SignatureTemplate) => {
-    // TODO: Implement duplicate functionality
-    toast({
-      title: "Feature coming soon",
-      description: "Template duplication will be available soon.",
-    });
+    const name = prompt("Enter a name for the duplicate template:", `${template.name} (Copy)`);
+    if (!name) return;
+    try {
+      await apiRequest("POST", `/api/templates/${template.id}/duplicate`, { name });
+      toast({ title: "Template duplicated", description: "A copy has been created." });
+      queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to duplicate template", variant: "destructive" });
+    }
   };
 
   const handleDeleteTemplate = async (template: SignatureTemplate) => {
@@ -208,68 +250,74 @@ export default function Templates() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTemplates.map((template: SignatureTemplate, index: number) => (
-                <Card 
-                  key={template.id} 
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => {
-                    setSelectedTemplate(template);
-                    setIsPreviewOpen(true);
-                  }}
-                >
+              {filteredTemplates.map((template, idx) => (
+                <Card key={template.id} className="relative group">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`w-10 h-10 ${getTemplateGradient(index)} rounded-lg flex items-center justify-center`}>
-                        <FileSignature className="h-5 w-5 text-white" />
+                      <div className="flex items-center gap-3">
+                        <FileSignature className="h-8 w-8 text-blue-500" />
+                        <div>
+                          <div className="font-semibold text-gray-900">{template.name}</div>
+                          <div className="text-xs text-gray-500">Updated {formatDistanceToNow(new Date(template.updatedAt))} ago</div>
+                        </div>
                       </div>
-                      <Badge variant={template.status === 'active' ? 'default' : 'secondary'}>
-                        {template.status}
-                      </Badge>
+                      <Badge variant={template.status === 'active' ? 'default' : 'secondary'}>{template.status}</Badge>
                     </div>
-
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {template.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      Updated {formatDistanceToNow(new Date(template.updatedAt), { addSuffix: true })}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      {template.isShared && (
-                        <Badge variant="outline" className="text-xs">
-                          Shared
-                        </Badge>
-                      )}
-                      <div className="flex space-x-2 ml-auto" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditTemplate(template)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDuplicateTemplate(template)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteTemplate(template)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    {/* HTML Preview */}
+                    <div className="border rounded bg-white p-2 mb-4 min-h-[60px] max-h-32 overflow-auto" dangerouslySetInnerHTML={{ __html: template.htmlContent || '' }} />
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedTemplate(template); setIsPreviewOpen(true); }}>Preview</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleEditTemplate(template)}><Edit className="h-4 w-4 mr-1" />Edit</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleDuplicateTemplate(template)}><Copy className="h-4 w-4 mr-1" />Duplicate</Button>
+                      <Button size="sm" variant="outline" onClick={() => handleShowVersions(template)}><Eye className="h-4 w-4 mr-1" />Version History</Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteTemplate(template)}><Trash2 className="h-4 w-4 mr-1" />Delete</Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
+          {/* Version History Modal */}
+          <Dialog open={versionModalOpen} onOpenChange={setVersionModalOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Version History - {versionTemplate?.name}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {versions.length === 0 ? (
+                  <div className="text-gray-500 text-center py-8">No version history found.</div>
+                ) : (
+                  versions.map((v) => (
+                    <div key={v.id} className="border rounded p-4 bg-white flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="font-semibold">Version {v.version}</div>
+                        <div className="text-xs text-gray-500 mb-2">Created: {new Date(v.created_at).toLocaleString()} by {v.creator?.first_name} {v.creator?.last_name}</div>
+                        <div className="border rounded bg-gray-50 p-2 min-h-[40px] max-h-24 overflow-auto" dangerouslySetInnerHTML={{ __html: v.html_content || '' }} />
+                      </div>
+                      <div className="flex flex-col gap-2 min-w-[120px]">
+                        <Button size="sm" variant="outline" onClick={() => setSelectedVersion(v)}>Preview</Button>
+                        <Button size="sm" variant="destructive" disabled={rollbackLoading} onClick={() => handleRollback(v)}>
+                          {rollbackLoading ? 'Rolling back...' : 'Rollback'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              {/* Version Preview Modal */}
+              <Dialog open={!!selectedVersion} onOpenChange={() => setSelectedVersion(null)}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Preview - Version {selectedVersion?.version}</DialogTitle>
+                  </DialogHeader>
+                  <div className="border rounded bg-white p-4 min-h-[60px] max-h-96 overflow-auto" dangerouslySetInnerHTML={{ __html: selectedVersion?.html_content || '' }} />
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setSelectedVersion(null)}>Close</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
 
