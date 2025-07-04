@@ -208,6 +208,38 @@ export default function SignatureEditor() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedBlockId]);
 
+  // Insert variable into text block
+  const handleInsertVariable = (variableLabel: string) => {
+    // Only allow if editing a text block or a text block is selected
+    const targetBlockId = editingBlockId || (selectedBlockId && blocks.find(b => b.id === selectedBlockId && b.type === 'text')?.id);
+    if (!targetBlockId) return;
+    setBlocks((prev) =>
+      prev.map((block) => {
+        if (block.id !== targetBlockId) return block;
+        // Insert variable at cursor if editing, else at end
+        if (editingBlockId === targetBlockId) {
+          // If editing, insert at cursor position in editingValue
+          const variable = `{{${variableLabel}}}`;
+          let newValue = editingValue;
+          const input = document.activeElement as HTMLInputElement;
+          if (input && input.selectionStart !== null) {
+            const start = input.selectionStart;
+            const end = input.selectionEnd ?? start;
+            newValue = editingValue.slice(0, start) + variable + editingValue.slice(end);
+            setEditingValue(newValue);
+          } else {
+            newValue = editingValue + variable;
+            setEditingValue(newValue);
+          }
+          return { ...block, content: newValue };
+        } else {
+          // Not editing, just append to content
+          return { ...block, content: block.content + `{{${variableLabel}}}` };
+        }
+      })
+    );
+  };
+
   return (
     <div className="flex flex-col w-full h-full p-6 gap-6">
       {/* Toolbar */}
@@ -226,7 +258,19 @@ export default function SignatureEditor() {
         </Button>
         <span className="mx-2 text-gray-300">|</span>
         {VARIABLE_OPTIONS.map((v) => (
-          <Button key={v.label} variant="ghost" size="sm" className="flex gap-1 items-center">
+          <Button
+            key={v.label}
+            variant="ghost"
+            size="sm"
+            className="flex gap-1 items-center"
+            onClick={() => handleInsertVariable(v.label)}
+            disabled={
+              !(
+                (selectedBlockId && blocks.find(b => b.id === selectedBlockId && b.type === 'text')) ||
+                (editingBlockId && blocks.find(b => b.id === editingBlockId && b.type === 'text'))
+              )
+            }
+          >
             {v.icon} {v.label}
           </Button>
         ))}
