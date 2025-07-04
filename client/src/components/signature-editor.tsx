@@ -1,779 +1,155 @@
-import { useState, useMemo, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Upload, Linkedin, Twitter, Instagram, Globe, Mail, Phone } from "lucide-react";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Plus, Text, Image as ImageIcon, Link, Info, User, Smartphone } from 'lucide-react';
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
+// Signature Editor - Rebuild in progress
+// This file will be rebuilt to provide a freeform, canvas-style email signature editor inspired by signature-canvas-craft, using only existing project components and dependencies.
 
-interface SignatureData {
-  name: string;
-  title: string;
-  company: string;
-  email: string;
-  phone: string;
-  website: string;
-  linkedIn?: string;
-  twitter?: string;
-  instagram?: string;
-  logo?: string;
-}
-
-interface SignatureEditorProps {
-  initialData?: Partial<SignatureData>;
-  onSave: (data: SignatureData & { htmlContent: string }) => void;
-  onCancel: () => void;
-}
-
-// Block Types
-export type BlockType = 'row' | 'column' | 'cell' | 'text' | 'image' | 'social' | 'logo' | 'legal' | 'contact';
-
-export interface SignatureBlock {
-  id: string;
-  type: BlockType;
-  data: any;
-  children?: SignatureBlock[];
-}
-
-const PALETTE: { type: BlockType; label: string; icon: React.ReactNode }[] = [
-  { type: 'text', label: 'Text', icon: <Text className="w-4 h-4" /> },
-  { type: 'image', label: 'Image', icon: <ImageIcon className="w-4 h-4" /> },
-  { type: 'social', label: 'Social Links', icon: <Link className="w-4 h-4" /> },
-  { type: 'logo', label: 'Logo', icon: <User className="w-4 h-4" /> },
-  { type: 'legal', label: 'Legal', icon: <Info className="w-4 h-4" /> },
-  { type: 'contact', label: 'Contact', icon: <Smartphone className="w-4 h-4" /> },
-];
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Text, Image as ImageIcon, Minus, Square, User, Briefcase, Mail, Phone } from 'lucide-react';
+import { DndContext, useDraggable, DragEndEvent } from '@dnd-kit/core';
 
 const VARIABLE_OPTIONS = [
-  { label: 'First Name', value: 'firstName' },
-  { label: 'Last Name', value: 'lastName' },
-  { label: 'Email', value: 'email' },
-  { label: 'Username', value: 'username' },
-  { label: 'Title', value: 'title' },
-  { label: 'Department', value: 'department' },
-  { label: 'Phone', value: 'phone' },
-  { label: 'Avatar', value: 'avatar' },
+  { label: 'First Name', icon: <User className="w-4 h-4" /> },
+  { label: 'Last Name', icon: <User className="w-4 h-4" /> },
+  { label: 'Job Title', icon: <Briefcase className="w-4 h-4" /> },
+  { label: 'Company', icon: <Briefcase className="w-4 h-4" /> },
+  { label: 'Email', icon: <Mail className="w-4 h-4" /> },
+  { label: 'Phone', icon: <Phone className="w-4 h-4" /> },
 ];
+
+type BlockType = 'text' | 'image' | 'line' | 'rectangle';
+
+interface Block {
+  id: string;
+  type: BlockType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  content: string;
+}
+
+const BLOCK_DEFAULTS: Record<BlockType, { width: number; height: number; content: string }> = {
+  text: { width: 180, height: 40, content: 'Text' },
+  image: { width: 80, height: 80, content: '' },
+  line: { width: 120, height: 2, content: '' },
+  rectangle: { width: 100, height: 60, content: '' },
+};
+
+function getRandomPosition() {
+  // Place new blocks randomly within the canvas area
+  const x = 60 + Math.floor(Math.random() * 200);
+  const y = 60 + Math.floor(Math.random() * 200);
+  return { x, y };
+}
 
 function generateId() {
   return Math.random().toString(36).substr(2, 9);
 }
 
-// Helper to render variables in HTML preview
-function renderVariables(str: string, user: Record<string, string | undefined>) {
-  return str.replace(/\{\{(\w+)\}\}/g, (_, v) => user[v] || '');
-}
+export default function SignatureEditor() {
+  const [blocks, setBlocks] = useState<Block[]>([]);
 
-export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEditorProps) {
-  const [signatureData, setSignatureData] = useState<SignatureData>({
-    name: initialData?.name || "",
-    title: initialData?.title || "",
-    company: initialData?.company || "",
-    email: initialData?.email || "",
-    phone: initialData?.phone || "",
-    website: initialData?.website || "",
-    linkedIn: initialData?.linkedIn || "",
-    twitter: initialData?.twitter || "",
-    instagram: initialData?.instagram || "",
-    logo: initialData?.logo || "",
-  });
-
-  // Start with a single row and column for the initial layout
-  const [blocks, setBlocks] = useState<SignatureBlock[]>([
-    {
-      id: generateId(),
-      type: 'row',
-      data: {},
-      children: [
-        {
-          id: generateId(),
-          type: 'column',
-          data: {},
-          children: [],
-        },
-      ],
-    },
-  ]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
-
-  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
-
-  // For preview, mock user data (replace with real user context in integration)
-  const mockUser: Record<string, string> = {
-    firstName: 'Jane',
-    lastName: 'Doe',
-    email: 'jane.doe@example.com',
-    username: 'janedoe',
-    title: 'Marketing Manager',
-    department: 'Marketing',
-    phone: '+1 555-123-4567',
-    avatar: '',
-  };
-
-  const handleInputChange = (field: keyof SignatureData, value: string) => {
-    setSignatureData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const generateHtmlContent = (): string => {
-    return `
-      <div style="font-family: Arial, sans-serif; max-width: 500px;">
-        <table cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            ${signatureData.logo ? `
-              <td style="padding-right: 20px; vertical-align: top;">
-                <img src="${signatureData.logo}" alt="Company Logo" style="width: 80px; height: 80px; border-radius: 8px;">
-              </td>
-            ` : ''}
-            <td style="vertical-align: top;">
-              <div style="margin-bottom: 8px;">
-                <div style="font-size: 18px; font-weight: bold; color: #1a1a1a; margin-bottom: 2px;">
-                  ${signatureData.name}
-                </div>
-                <div style="font-size: 14px; color: #666666; margin-bottom: 2px;">
-                  ${signatureData.title}
-                </div>
-                <div style="font-size: 14px; color: #666666;">
-                  ${signatureData.company}
-                </div>
-              </div>
-              
-              <div style="margin-bottom: 12px;">
-                ${signatureData.email ? `
-                  <div style="font-size: 13px; color: #888888; margin-bottom: 2px;">
-                    📧 ${signatureData.email}
-                  </div>
-                ` : ''}
-                ${signatureData.phone ? `
-                  <div style="font-size: 13px; color: #888888; margin-bottom: 2px;">
-                    📞 ${signatureData.phone}
-                  </div>
-                ` : ''}
-                ${signatureData.website ? `
-                  <div style="font-size: 13px; color: #888888;">
-                    🌐 ${signatureData.website}
-                  </div>
-                ` : ''}
-              </div>
-              
-              <div>
-                ${signatureData.linkedIn ? `
-                  <a href="${signatureData.linkedIn}" style="text-decoration: none; margin-right: 8px;">
-                    <span style="color: #0077B5;">LinkedIn</span>
-                  </a>
-                ` : ''}
-                ${signatureData.twitter ? `
-                  <a href="${signatureData.twitter}" style="text-decoration: none; margin-right: 8px;">
-                    <span style="color: #1DA1F2;">Twitter</span>
-                  </a>
-                ` : ''}
-                ${signatureData.instagram ? `
-                  <a href="${signatureData.instagram}" style="text-decoration: none;">
-                    <span style="color: #E4405F;">Instagram</span>
-                  </a>
-                ` : ''}
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-    `;
-  };
-
-  const handleSave = () => {
-    const htmlContent = generateHtmlContent();
-    onSave({
-      ...signatureData,
-      htmlContent,
-    });
-  };
-
-  // Drag from palette to canvas
-  const handlePaletteDragStart = (type: BlockType) => {
-    const newBlock: SignatureBlock = {
-      id: generateId(),
-      type,
-      data: {},
-    };
-    setBlocks((prev) => [...prev, newBlock]);
-  };
-
-  // Drag to reorder
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    if (active.id !== over?.id) {
-      setBlocks((items) => {
-        const oldIndex = items.findIndex((b) => b.id === active.id);
-        const newIndex = items.findIndex((b) => b.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
-  };
-
-  // Update block data helper
-  const updateBlockData = (id: string, data: any) => {
-    setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, data } : b)));
-  };
-
-  // Recursive HTML generation for nested blocks
-  const generateHtmlFromBlocks = (blocks: SignatureBlock[]): string => {
-    const renderBlock = (block: SignatureBlock): string => {
-      if (block.type === 'row') {
-        return `<tr>${(block.children || []).map(renderBlock).join('')}</tr>`;
-      }
-      if (block.type === 'column') {
-        return `<td style="vertical-align:top;">${(block.children || []).map(renderBlock).join('')}</td>`;
-      }
-      // Leaf blocks
-      if (block.data?.conditionField && !mockUser[block.data.conditionField]) return '';
-      switch (block.type) {
-        case 'text':
-          return `<div style=\"margin-bottom:8px;\">${renderVariables(block.data?.html || '', mockUser)}</div>`;
-        case 'image':
-          return block.data?.url ? `<div style=\"margin-bottom:8px;\"><img src=\"${block.data.url}\" alt=\"Image\" style=\"max-width:100%;height:auto;border-radius:4px;\" /></div>` : '';
-        case 'social':
-          return `<div style=\"margin-bottom:8px;\">[Social links]</div>`;
-        case 'logo':
-          return block.data?.url ? `<div style=\"margin-bottom:8px;\"><img src=\"${block.data.url}\" alt=\"Logo\" style=\"max-width:120px;height:auto;border-radius:8px;\" /></div>` : '';
-        case 'legal':
-          return `<div style=\"margin-bottom:8px; font-size:11px; color:#888;\">[Legal disclaimer]</div>`;
-        case 'contact':
-          return `<div style=\"margin-bottom:8px;\">${VARIABLE_OPTIONS.filter(v => v.value !== 'avatar').map(v => mockUser[v.value] ? `<div><b>${v.label}:</b> ${mockUser[v.value]}</div>` : '').join('')}</div>`;
-        default:
-          return '';
-      }
-    };
-    // Wrap in table for email compatibility
-    return `<table cellpadding="0" cellspacing="0" border="0">${blocks.map(renderBlock).join('')}</table>`;
-  };
-
-  const htmlPreview = useMemo(() => generateHtmlFromBlocks(blocks), [blocks]);
-
-  // Export HTML as file
-  const handleExportHtml = () => {
-    const blob = new Blob([htmlPreview], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'signature.html';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-
-  // Helper to find a block by id (recursive)
-  const findBlockById = useCallback((blocks: SignatureBlock[], id: string | null): SignatureBlock | null => {
-    if (!id) return null;
-    for (const block of blocks) {
-      if (block.id === id) return block;
-      if (block.children) {
-        const found = findBlockById(block.children, id);
-        if (found) return found;
-      }
-    }
-    return null;
-  }, []);
-
-  const selectedBlock = useMemo(() => findBlockById(blocks, selectedBlockId), [blocks, selectedBlockId, findBlockById]);
-
-  return (
-    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto p-6">
-      {/* Sidebar Palette */}
-      <aside className="w-full lg:w-64 space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Elements</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {PALETTE.map((item) => (
-              <Button
-                key={item.type}
-                variant="outline"
-                className="w-full flex items-center gap-2 justify-start"
-                onClick={() => handlePaletteDragStart(item.type)}
-              >
-                {item.icon}
-                {item.label}
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
-      </aside>
-
-      {/* Editor Canvas */}
-      <main className="flex-1 min-h-[500px] flex flex-col gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Signature Canvas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={blocks.map((b) => b.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-4">
-                  {blocks.length === 0 && (
-                    <div className="text-gray-400 text-center py-12">
-                      Drag elements from the left to start building your signature.
-                    </div>
-                  )}
-                  {blocks.map((block) => (
-                    <NestedBlockRenderer
-                      key={block.id}
-                      block={block}
-                      updateBlockData={updateBlockData}
-                      selectedBlockId={selectedBlockId}
-                      setSelectedBlockId={setSelectedBlockId}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-            <div className="flex gap-2 mt-2">
-              <Button variant="outline" size="sm" onClick={() => {
-                setBlocks((prev) => [
-                  ...prev,
-                  {
-                    id: generateId(),
-                    type: 'row',
-                    data: {},
-                    children: [
-                      {
-                        id: generateId(),
-                        type: 'column',
-                        data: {},
-                        children: [],
-                      },
-                    ],
-                  },
-                ]);
-              }}>
-                + Add Row
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        {/* Save/Cancel Buttons */}
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button variant="default" onClick={handleSave}>Save</Button>
-        </div>
-      </main>
-
-      {/* Real-time Preview */}
-      <aside className="w-full lg:w-96">
-        <Card>
-          <CardHeader>
-            <CardTitle>Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex gap-2">
-                <Button
-                  variant={previewMode === 'desktop' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPreviewMode('desktop')}
-                >
-                  Desktop
-                </Button>
-                <Button
-                  variant={previewMode === 'mobile' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPreviewMode('mobile')}
-                >
-                  Mobile
-                </Button>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleExportHtml}>
-                Export HTML
-              </Button>
-            </div>
-            <div
-              className={
-                previewMode === 'mobile'
-                  ? 'border rounded bg-white mx-auto w-[375px] min-h-[300px] overflow-auto shadow'
-                  : 'border rounded bg-white w-full min-h-[300px] overflow-auto shadow'
-              }
-              style={{ maxWidth: previewMode === 'mobile' ? 375 : 500 }}
-              dangerouslySetInnerHTML={{ __html: htmlPreview }}
-            />
-          </CardContent>
-        </Card>
-      </aside>
-
-      {/* Render the block style panel */}
-      <BlockStylePanel selectedBlock={selectedBlock} updateBlockData={updateBlockData} />
-    </div>
-  );
-}
-
-// Recursive renderer for nested blocks
-function NestedBlockRenderer({ block, updateBlockData, selectedBlockId, setSelectedBlockId }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void; selectedBlockId: string | null; setSelectedBlockId: (id: string) => void }) {
-  if (block.type === 'row') {
-    return (
-      <div className="flex flex-row border rounded mb-2 items-stretch">
-        {(block.children || []).map((child, idx) => (
-          <div key={child.id} className="relative flex-1 flex flex-col">
-            <NestedBlockRenderer
-              block={child}
-              updateBlockData={updateBlockData}
-              selectedBlockId={selectedBlockId}
-              setSelectedBlockId={setSelectedBlockId}
-            />
-            {/* Add Column button for each column */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute -right-4 top-1/2 -translate-y-1/2 z-10"
-              onClick={() => {
-                // Insert a new column after this one
-                const newCol: SignatureBlock = { id: generateId(), type: 'column', data: {}, children: [] };
-                const newChildren = [...(block.children || [])];
-                newChildren.splice(idx + 1, 0, newCol);
-                // Update the row's children
-                updateBlockData(block.id, { ...block.data, children: newChildren });
-              }}
-            >
-              +
-            </Button>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (block.type === 'column') {
-    return (
-      <div className="flex flex-col flex-1 border-l last:border-r rounded p-2 min-w-[120px]">
-        {(block.children || []).map((child) => (
-          <NestedBlockRenderer
-            key={child.id}
-            block={child}
-            updateBlockData={updateBlockData}
-            selectedBlockId={selectedBlockId}
-            setSelectedBlockId={setSelectedBlockId}
-          />
-        ))}
-        {/* Palette for adding content blocks */}
-        <div className="flex flex-wrap gap-2 mt-2">
-          {PALETTE.filter(p => !['row', 'column', 'cell'].includes(p.type)).map((item) => (
-            <Button
-              key={item.type}
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                // Add a new content block to this column
-                const newBlock: SignatureBlock = {
-                  id: generateId(),
-                  type: item.type as BlockType,
-                  data: {},
-                };
-                const newChildren = [...(block.children || []), newBlock];
-                updateBlockData(block.id, { ...block.data, children: newChildren });
-              }}
-            >
-              {item.icon} {item.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  // Fallback to existing block renderer for leaf blocks
-  return <SignatureBlockRenderer block={block} updateBlockData={updateBlockData} onSelect={setSelectedBlockId} selectedBlockId={selectedBlockId} />;
-}
-
-// Block Renderer (rich text for text blocks)
-function SignatureBlockRenderer({ block, updateBlockData, onSelect, selectedBlockId }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void; onSelect?: (id: string) => void; selectedBlockId?: string | null }) {
-  if (block.type === 'text') {
-    return (
-      <div
-        className={`border rounded p-3 bg-white cursor-pointer ${selectedBlockId === block.id ? 'ring-2 ring-blue-500' : ''}`}
-        onClick={(e) => { e.stopPropagation(); onSelect?.(block.id); }}
-      >
-        <RichTextBlock block={block} updateBlockData={updateBlockData} />
-      </div>
-    );
-  }
-  if (block.type === 'image' || block.type === 'logo') {
-    return <ImageBlock block={block} updateBlockData={updateBlockData} />;
-  }
-  if (block.type === 'contact') {
-    return (
-      <div className="border rounded p-3 bg-white">
-        <div className="mb-2 text-xs text-gray-500">Contact Info (dynamic):</div>
-        <div className="space-y-1">
-          {VARIABLE_OPTIONS.filter(v => v.value !== 'avatar').map(v => (
-            <div key={v.value} className="flex items-center gap-2">
-              <span className="font-medium">{v.label}:</span>
-              <span className="text-gray-700">{'{{'+v.value+'}}'}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-xs text-gray-500">Show only if:</span>
-          <select
-            className="border rounded px-2 py-1 text-xs"
-            value={block.data?.conditionField || ''}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateBlockData(block.id, { ...block.data, conditionField: e.target.value || undefined })}
-          >
-            <option value="">Always show</option>
-            {VARIABLE_OPTIONS.map(v => (
-              <option key={v.value} value={v.value}>{v.label} exists</option>
-            ))}
-          </select>
-        </div>
-      </div>
-    );
-  }
-  switch (block.type) {
-    case 'social':
-      return (
-        <div className="border rounded p-3 bg-gray-50">Social Links Block</div>
-      );
-    case 'legal':
-      return (
-        <div className="border rounded p-3 bg-gray-50">Legal Disclaimer Block</div>
-      );
-    default:
-      return null;
-  }
-}
-
-// Rich Text Block Component
-function RichTextBlock({ block, updateBlockData }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void }) {
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({ placeholder: 'Type your text...' }),
-    ],
-    content: block.data?.content || '',
-    onUpdate: ({ editor }) => {
-      updateBlockData(block.id, {
-        ...block.data,
-        content: editor.getHTML(),
-        html: editor.getHTML(),
-      });
-    },
-    editorProps: {
-      attributes: {
-        class: 'prose prose-sm min-h-[60px] focus:outline-none',
+  // Add block handler
+  const handleAddBlock = (type: BlockType) => {
+    const { x, y } = getRandomPosition();
+    setBlocks((prev) => [
+      ...prev,
+      {
+        id: generateId(),
+        type,
+        x,
+        y,
+        ...BLOCK_DEFAULTS[type],
       },
-    },
-  });
+    ]);
+  };
 
-  // Insert variable at cursor
-  const insertVariable = (variable: string) => {
-    if (editor) {
-      editor.commands.insertContent(`{{${variable}}}`);
-    }
+  // Update block position
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, delta } = event;
+    setBlocks((prev) =>
+      prev.map((block) =>
+        block.id === active.id
+          ? { ...block, x: block.x + (delta?.x || 0), y: block.y + (delta?.y || 0) }
+          : block
+      )
+    );
   };
 
   return (
-    <div className="border rounded p-3 bg-white">
-      <div className="mb-2 flex flex-wrap gap-2">
+    <div className="flex flex-col w-full h-full p-6 gap-6">
+      {/* Toolbar */}
+      <Card className="p-4 flex flex-wrap gap-2 items-center justify-start">
+        <Button variant="outline" size="sm" className="flex gap-2 items-center" onClick={() => handleAddBlock('text')}>
+          <Text className="w-4 h-4" /> Add Text
+        </Button>
+        <Button variant="outline" size="sm" className="flex gap-2 items-center" onClick={() => handleAddBlock('image')}>
+          <ImageIcon className="w-4 h-4" /> Add Image
+        </Button>
+        <Button variant="outline" size="sm" className="flex gap-2 items-center" onClick={() => handleAddBlock('line')}>
+          <Minus className="w-4 h-4" /> Add Line
+        </Button>
+        <Button variant="outline" size="sm" className="flex gap-2 items-center" onClick={() => handleAddBlock('rectangle')}>
+          <Square className="w-4 h-4" /> Add Rectangle
+        </Button>
+        <span className="mx-2 text-gray-300">|</span>
         {VARIABLE_OPTIONS.map((v) => (
-          <Button key={v.value} size="sm" variant="outline" onClick={() => insertVariable(v.value)}>
-            {`{${v.label}}`}
+          <Button key={v.label} variant="ghost" size="sm" className="flex gap-1 items-center">
+            {v.icon} {v.label}
           </Button>
         ))}
-      </div>
-      <EditorContent editor={editor} />
-      {/* Conditional logic UI */}
-      <div className="mt-2 flex items-center gap-2">
-        <span className="text-xs text-gray-500">Show only if:</span>
-        <select
-          className="border rounded px-2 py-1 text-xs"
-          value={block.data?.conditionField || ''}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateBlockData(block.id, { ...block.data, conditionField: e.target.value || undefined })}
-        >
-          <option value="">Always show</option>
-          {VARIABLE_OPTIONS.map(v => (
-            <option key={v.value} value={v.value}>{v.label} exists</option>
+      </Card>
+
+      {/* Canvas Area */}
+      <DndContext onDragEnd={handleDragEnd}>
+        <div className="flex-1 w-full min-h-[600px] bg-gray-50 border border-dashed border-gray-300 rounded-lg relative overflow-auto">
+          <div className="absolute left-0 top-0 w-full h-full pointer-events-none select-none">
+            {/* Canvas grid background (optional) */}
+            <svg width="100%" height="100%" className="absolute left-0 top-0" style={{ zIndex: 0 }}>
+              <defs>
+                <pattern id="smallGrid" width="8" height="8" patternUnits="userSpaceOnUse">
+                  <path d="M 8 0 L 0 0 0 8" fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#smallGrid)" />
+            </svg>
+          </div>
+          {/* Render blocks */}
+          {blocks.map((block) => (
+            <DraggableBlock key={block.id} block={block} />
           ))}
-        </select>
-      </div>
+        </div>
+      </DndContext>
     </div>
   );
 }
 
-// Image/Logo Block Component
-function ImageBlock({ block, updateBlockData }: { block: SignatureBlock; updateBlockData: (id: string, data: any) => void }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB');
-      return;
-    }
-    setUploading(true);
-    setError(null);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('name', file.name);
-      const response = await fetch('/api/assets/upload', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
-      }
-      const data = await response.json();
-      updateBlockData(block.id, { ...block.data, url: data.url });
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload image');
-    } finally {
-      setUploading(false);
-    }
+function DraggableBlock({ block }: { block: Block }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: block.id,
+  });
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    left: block.x + (transform?.x || 0),
+    top: block.y + (transform?.y || 0),
+    width: block.width,
+    height: block.height,
+    zIndex: isDragging ? 10 : 1,
+    cursor: 'move',
+    background: block.type === 'rectangle' ? '#facc15' : 'white',
+    border: '1px solid #d1d5db',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: isDragging ? '0 2px 8px rgba(0,0,0,0.12)' : undefined,
+    userSelect: 'none',
   };
-
   return (
-    <div className="border rounded p-3 bg-white flex flex-col gap-2">
-      {block.data?.url ? (
-        <div className="flex flex-col items-center gap-2">
-          <img src={block.data.url} alt="Uploaded" className="max-h-32 object-contain border rounded" />
-          <Button variant="outline" size="sm" onClick={() => updateBlockData(block.id, { ...block.data, url: undefined })}>
-            Remove Image
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
-            {uploading ? 'Uploading...' : 'Upload Image'}
-          </Button>
-          {error && <div className="text-xs text-red-600">{error}</div>}
-        </div>
-      )}
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {block.type === 'text' && <span style={{ fontSize: 16 }}>{block.content}</span>}
+      {block.type === 'image' && <ImageIcon className="w-8 h-8 text-gray-400" />}
+      {block.type === 'line' && <div style={{ width: '100%', height: 2, background: '#222' }} />}
+      {block.type === 'rectangle' && <span style={{ color: '#222', fontWeight: 500 }}>Rect</span>}
     </div>
-  );
-}
-
-// Side panel for block styling
-function BlockStylePanel({ selectedBlock, updateBlockData }: { selectedBlock: SignatureBlock | null, updateBlockData: (id: string, data: any) => void }) {
-  if (!selectedBlock || selectedBlock.type !== 'text') return null;
-  const style = selectedBlock.data?.style || {};
-  return (
-    <aside className="w-80 p-4 border-l bg-white fixed right-0 top-0 h-full z-50 shadow-lg">
-      <h3 className="font-semibold mb-4">Text Styling</h3>
-      <div className="mb-3">
-        <label className="block text-xs mb-1">Font Family</label>
-        <select
-          className="w-full border rounded px-2 py-1"
-          value={style.fontFamily || ''}
-          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, fontFamily: e.target.value } })}
-        >
-          <option value="">Default</option>
-          <option value="Arial">Arial</option>
-          <option value="Helvetica">Helvetica</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Georgia">Georgia</option>
-          <option value="Courier New">Courier New</option>
-        </select>
-      </div>
-      <div className="mb-3">
-        <label className="block text-xs mb-1">Font Size</label>
-        <input
-          type="number"
-          className="w-full border rounded px-2 py-1"
-          value={style.fontSize || ''}
-          min={8}
-          max={72}
-          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, fontSize: e.target.value } })}
-        />
-      </div>
-      <div className="mb-3">
-        <label className="block text-xs mb-1">Font Color</label>
-        <input
-          type="color"
-          className="w-8 h-8 border rounded"
-          value={style.color || '#222222'}
-          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, color: e.target.value } })}
-        />
-      </div>
-      <div className="mb-3 flex gap-2">
-        <Button size="sm" variant={style.fontWeight === 'bold' ? 'default' : 'outline'} onClick={() => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, fontWeight: style.fontWeight === 'bold' ? undefined : 'bold' } })}>B</Button>
-        <Button size="sm" variant={style.fontStyle === 'italic' ? 'default' : 'outline'} onClick={() => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, fontStyle: style.fontStyle === 'italic' ? undefined : 'italic' } })}>I</Button>
-        <Button size="sm" variant={style.textDecoration === 'underline' ? 'default' : 'outline'} onClick={() => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, textDecoration: style.textDecoration === 'underline' ? undefined : 'underline' } })}>U</Button>
-      </div>
-      <div className="mb-3">
-        <label className="block text-xs mb-1">Alignment</label>
-        <select
-          className="w-full border rounded px-2 py-1"
-          value={style.textAlign || ''}
-          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, textAlign: e.target.value } })}
-        >
-          <option value="">Default</option>
-          <option value="left">Left</option>
-          <option value="center">Center</option>
-          <option value="right">Right</option>
-        </select>
-      </div>
-      <div className="mb-3">
-        <label className="block text-xs mb-1">Line Height</label>
-        <input
-          type="number"
-          className="w-full border rounded px-2 py-1"
-          value={style.lineHeight || ''}
-          min={1}
-          max={3}
-          step={0.1}
-          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, lineHeight: e.target.value } })}
-        />
-      </div>
-      <div className="mb-3">
-        <label className="block text-xs mb-1">Letter Spacing</label>
-        <input
-          type="number"
-          className="w-full border rounded px-2 py-1"
-          value={style.letterSpacing || ''}
-          min={-5}
-          max={20}
-          step={0.1}
-          onChange={e => updateBlockData(selectedBlock.id, { ...selectedBlock.data, style: { ...style, letterSpacing: e.target.value } })}
-        />
-      </div>
-    </aside>
   );
 }
