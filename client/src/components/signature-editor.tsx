@@ -364,6 +364,8 @@ export default function SignatureEditor() {
     reader.readAsDataURL(file);
   };
 
+  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+
   return (
     <div className="flex flex-col w-full h-full p-6 gap-6">
       {/* Toolbar */}
@@ -560,128 +562,205 @@ export default function SignatureEditor() {
           })()}
         </DialogContent>
       </Dialog>
-      <Dialog open={textPanelOpen && !!textPanelBlockId} onOpenChange={(open) => {
-        setTextPanelOpen(open);
-        if (!open) setTextPanelBlockId(null);
-      }}>
-        <DialogContent style={{ minWidth: 340, maxWidth: 400 }}>
-          {(() => {
-            const block = blocks.find(b => b.id === textPanelBlockId && b.type === 'text');
-            if (!block) return null;
-            return (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Text Element</DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col gap-3">
-                  <div className="font-semibold text-sm mt-2">Text</div>
-                  <Input
-                    type="text"
-                    value={block.content}
-                    onChange={e => updateTextBlock(block.id, { content: e.target.value })}
-                  />
-                  <div className="font-semibold text-sm mt-2">Typography</div>
-                  <div className="flex gap-2">
-                    <select
-                      value={block.fontFamily || 'Arial'}
-                      onChange={e => updateTextBlock(block.id, { fontFamily: e.target.value })}
-                      className="border rounded px-2 py-1"
-                    >
-                      <option value="Arial">Arial</option>
-                      <option value="Helvetica">Helvetica</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Georgia">Georgia</option>
-                      <option value="Courier New">Courier New</option>
-                    </select>
-                    <Input
-                      type="number"
-                      value={block.fontSize || 14}
-                      min={8}
-                      max={72}
-                      onChange={e => updateTextBlock(block.id, { fontSize: Number(e.target.value) })}
-                      style={{ width: 80 }}
-                    />
-                  </div>
-                  <div className="flex gap-2 items-center mt-2">
-                    <label className="text-xs">Color</label>
-                    <input
-                      type="color"
-                      value={block.color || '#000000'}
-                      onChange={e => updateTextBlock(block.id, { color: e.target.value })}
-                      style={{ width: 32, height: 32, border: 'none', background: 'none' }}
-                    />
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      size="sm"
-                      variant={block.fontWeight === 'bold' ? 'default' : 'outline'}
-                      onClick={() => updateTextBlock(block.id, { fontWeight: block.fontWeight === 'bold' ? undefined : 'bold' })}
-                    >
-                      B
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={block.fontStyle === 'italic' ? 'default' : 'outline'}
-                      onClick={() => updateTextBlock(block.id, { fontStyle: block.fontStyle === 'italic' ? undefined : 'italic' })}
-                    >
-                      I
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={block.textDecoration === 'underline' ? 'default' : 'outline'}
-                      onClick={() => updateTextBlock(block.id, { textDecoration: block.textDecoration === 'underline' ? undefined : 'underline' })}
-                    >
-                      U
-                    </Button>
-                  </div>
-                  <div className="font-semibold text-sm mt-2">Styling</div>
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={block.padding ?? ''}
-                      placeholder="Padding"
-                      onChange={e => updateTextBlock(block.id, { padding: e.target.value })}
-                      style={{ width: 80 }}
-                    />
-                    <Input
-                      type="text"
-                      value={block.margin ?? ''}
-                      placeholder="Margin"
-                      onChange={e => updateTextBlock(block.id, { margin: e.target.value })}
-                      style={{ width: 80 }}
-                    />
-                  </div>
-                  <Input
-                    type="number"
-                    value={block.cornerRadius ?? 0}
-                    min={0}
-                    max={100}
-                    placeholder="Corner Radius"
-                    onChange={e => updateTextBlock(block.id, { cornerRadius: Number(e.target.value) })}
-                  />
-                  {block.variable ? (
-                    <div className="flex flex-col gap-2 mt-2">
-                      <label className="text-xs font-semibold">Variable</label>
-                      <select
-                        value={block.variable}
-                        onChange={e => updateTextBlock(block.id, { variable: e.target.value, content: `{{${e.target.value}}}` })}
-                        className="border rounded px-2 py-1"
-                      >
-                        {VARIABLE_OPTIONS.map(v => (
-                          <option key={v.label} value={v.label}>{v.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-                  <Button variant="destructive" className="mt-4" onClick={handleDeleteTextBlock}>
-                    Delete Element
-                  </Button>
+      {selectedBlock && (
+        <aside
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: 360,
+            height: '100vh',
+            background: '#fff',
+            borderLeft: '1px solid #e5e7eb',
+            boxShadow: '0 0 16px rgba(0,0,0,0.04)',
+            zIndex: 200,
+            padding: 24,
+            overflowY: 'auto',
+          }}
+        >
+          {selectedBlock.type === 'text' && (
+            <>
+              <div className="font-semibold text-lg mb-2">Text Element</div>
+              {selectedBlock.variable ? (
+                <div className="flex flex-col gap-2 mb-2">
+                  <label className="text-xs font-semibold">Variable</label>
+                  <select
+                    value={selectedBlock.variable}
+                    onChange={e => updateTextBlock(selectedBlock.id, { variable: e.target.value, content: `{{${e.target.value}}}` })}
+                    className="border rounded px-2 py-1"
+                  >
+                    {VARIABLE_OPTIONS.map(v => (
+                      <option key={v.label} value={v.label}>{v.label}</option>
+                    ))}
+                  </select>
                 </div>
-              </>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
+              ) : null}
+              <div className="font-semibold text-sm mt-2">Text</div>
+              <Input
+                type="text"
+                value={selectedBlock.content}
+                onChange={e => updateTextBlock(selectedBlock.id, { content: e.target.value })}
+              />
+              <div className="font-semibold text-sm mt-2">Typography</div>
+              <div className="flex gap-2">
+                <select
+                  value={selectedBlock.fontFamily || 'Arial'}
+                  onChange={e => updateTextBlock(selectedBlock.id, { fontFamily: e.target.value })}
+                  className="border rounded px-2 py-1"
+                >
+                  <option value="Arial">Arial</option>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Courier New">Courier New</option>
+                </select>
+                <Input
+                  type="number"
+                  value={selectedBlock.fontSize || 14}
+                  min={8}
+                  max={72}
+                  onChange={e => updateTextBlock(selectedBlock.id, { fontSize: Number(e.target.value) })}
+                  style={{ width: 80 }}
+                />
+              </div>
+              <div className="flex gap-2 items-center mt-2">
+                <label className="text-xs">Color</label>
+                <input
+                  type="color"
+                  value={selectedBlock.color || '#000000'}
+                  onChange={e => updateTextBlock(selectedBlock.id, { color: e.target.value })}
+                  style={{ width: 32, height: 32, border: 'none', background: 'none' }}
+                />
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  size="sm"
+                  variant={selectedBlock.fontWeight === 'bold' ? 'default' : 'outline'}
+                  onClick={() => updateTextBlock(selectedBlock.id, { fontWeight: selectedBlock.fontWeight === 'bold' ? undefined : 'bold' })}
+                >
+                  B
+                </Button>
+                <Button
+                  size="sm"
+                  variant={selectedBlock.fontStyle === 'italic' ? 'default' : 'outline'}
+                  onClick={() => updateTextBlock(selectedBlock.id, { fontStyle: selectedBlock.fontStyle === 'italic' ? undefined : 'italic' })}
+                >
+                  I
+                </Button>
+                <Button
+                  size="sm"
+                  variant={selectedBlock.textDecoration === 'underline' ? 'default' : 'outline'}
+                  onClick={() => updateTextBlock(selectedBlock.id, { textDecoration: selectedBlock.textDecoration === 'underline' ? undefined : 'underline' })}
+                >
+                  U
+                </Button>
+              </div>
+              <div className="font-semibold text-sm mt-2">Styling</div>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={selectedBlock.padding ?? ''}
+                  placeholder="Padding"
+                  onChange={e => updateTextBlock(selectedBlock.id, { padding: e.target.value })}
+                  style={{ width: 80 }}
+                />
+                <Input
+                  type="text"
+                  value={selectedBlock.margin ?? ''}
+                  placeholder="Margin"
+                  onChange={e => updateTextBlock(selectedBlock.id, { margin: e.target.value })}
+                  style={{ width: 80 }}
+                />
+              </div>
+              <Input
+                type="number"
+                value={selectedBlock.cornerRadius ?? 0}
+                min={0}
+                max={100}
+                placeholder="Corner Radius"
+                onChange={e => updateTextBlock(selectedBlock.id, { cornerRadius: Number(e.target.value) })}
+              />
+              <Button variant="destructive" className="mt-4" onClick={handleDeleteTextBlock}>
+                Delete Element
+              </Button>
+            </>
+          )}
+          {selectedBlock.type === 'image' && (
+            <>
+              <div className="font-semibold text-lg mb-2">Image Element</div>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={selectedBlock.x}
+                  min={0}
+                  onChange={e => updateImageBlock(selectedBlock.id, { x: Number(e.target.value) })}
+                  style={{ width: 80 }}
+                />
+                <Input
+                  type="number"
+                  value={selectedBlock.y}
+                  min={0}
+                  onChange={e => updateImageBlock(selectedBlock.id, { y: Number(e.target.value) })}
+                  style={{ width: 80 }}
+                />
+              </div>
+              <div className="font-semibold text-sm mt-2">Image Source</div>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                Upload Image
+              </Button>
+              <div className="text-xs text-gray-500">Or choose from assets:</div>
+              <div className="w-full h-16 bg-gray-100 border rounded flex items-center justify-center text-gray-400">
+                (Asset picker placeholder)
+              </div>
+              <div className="font-semibold text-sm mt-2">Size</div>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={selectedBlock.width}
+                  min={10}
+                  onChange={e => updateImageBlock(selectedBlock.id, { width: Number(e.target.value) })}
+                  style={{ width: 80 }}
+                />
+                <Input
+                  type="number"
+                  value={selectedBlock.height}
+                  min={10}
+                  onChange={e => updateImageBlock(selectedBlock.id, { height: Number(e.target.value) })}
+                  style={{ width: 80 }}
+                />
+              </div>
+              <div className="font-semibold text-sm mt-2">Styling</div>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={selectedBlock.padding ?? ''}
+                  placeholder="Padding"
+                  onChange={e => updateImageBlock(selectedBlock.id, { padding: e.target.value })}
+                  style={{ width: 80 }}
+                />
+                <Input
+                  type="text"
+                  value={selectedBlock.margin ?? ''}
+                  placeholder="Margin"
+                  onChange={e => updateImageBlock(selectedBlock.id, { margin: e.target.value })}
+                  style={{ width: 80 }}
+                />
+              </div>
+              <Input
+                type="number"
+                value={selectedBlock.cornerRadius ?? 0}
+                min={0}
+                max={100}
+                placeholder="Corner Radius"
+                onChange={e => updateImageBlock(selectedBlock.id, { cornerRadius: Number(e.target.value) })}
+              />
+              <Button variant="destructive" className="mt-4" onClick={handleDeleteImageBlock}>
+                Delete Element
+              </Button>
+            </>
+          )}
+        </aside>
+      )}
     </div>
   );
 }
