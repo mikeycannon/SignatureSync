@@ -232,18 +232,17 @@ export default function SignatureEditor() {
         ))}
       </Card>
 
-      {/* Delete button for selected block */}
-      {selectedBlockId && (
-        <div style={{ position: 'absolute', top: 16, right: 32, zIndex: 100 }}>
-          <Button variant="destructive" size="sm" onClick={handleDeleteSelectedBlock}>
-            Delete Block
-          </Button>
-        </div>
-      )}
-
       {/* Canvas Area */}
       <DndContext onDragEnd={handleDragEnd}>
         <div className="flex-1 w-full min-h-[600px] bg-gray-50 border border-dashed border-gray-300 rounded-lg relative overflow-auto">
+          {/* Delete button for selected block */}
+          {selectedBlockId && (
+            <div style={{ position: 'absolute', top: 16, right: 24, zIndex: 100 }}>
+              <Button variant="destructive" size="sm" onClick={handleDeleteSelectedBlock}>
+                Delete Block
+              </Button>
+            </div>
+          )}
           <div className="absolute left-0 top-0 w-full h-full pointer-events-none select-none">
             {/* Canvas grid background (optional) */}
             <svg width="100%" height="100%" className="absolute left-0 top-0" style={{ zIndex: 0 }}>
