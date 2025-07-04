@@ -277,7 +277,7 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
       </aside>
 
       {/* Editor Canvas */}
-      <main className="flex-1 min-h-[500px]">
+      <main className="flex-1 min-h-[500px] flex flex-col gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Signature Canvas</CardTitle>
@@ -310,6 +310,11 @@ export function SignatureEditor({ initialData, onSave, onCancel }: SignatureEdit
             </DndContext>
           </CardContent>
         </Card>
+        {/* Save/Cancel Buttons */}
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button variant="default" onClick={handleSave}>Save</Button>
+        </div>
       </main>
 
       {/* Real-time Preview */}
