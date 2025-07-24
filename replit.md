@@ -155,6 +155,7 @@ Complete Docker configuration for development environment with:
 - July 02, 2025. Fixed mobile navigation across all pages - added mobile menu state management and overlay functionality to Templates, Template Editor, and Assets pages for consistent hamburger menu behavior
 - July 02, 2025. Fixed authentication error in Assets page upload - added missing Authorization header with JWT token to resolve "Authentication required" error during file uploads
 - July 02, 2025. Added SVG upload support and horizontal spacing control for logo images - users can now upload SVG files and adjust logo spacing from 0-50px using interactive slider in image editing panel
+- July 02, 2025. Fixed template saving validation issues - resolved schema validation problems that prevented template saves by excluding content and htmlContent fields from form validation, these fields are now properly generated during submission
 
 ## Deployment Options
 

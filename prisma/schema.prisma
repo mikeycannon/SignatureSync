@@ -48,7 +48,6 @@ model User {
   template_assignments TemplateAssignment[]
   processing_logs      ProcessingLog[]
   uploaded_assets      Asset[]
-  created_template_versions SignatureTemplateVersion[] @relation("TemplateVersionCreator")
 
   @@map("users")
   @@index([tenant_id])
@@ -69,30 +68,10 @@ model SignatureTemplate {
   tenant               Tenant               @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   creator              User                 @relation("TemplateCreator", fields: [created_by], references: [id])
   template_assignments TemplateAssignment[]
-  versions             SignatureTemplateVersion[]
 
   @@map("signature_templates")
   @@index([tenant_id])
   @@index([created_by])
-}
-
-model SignatureTemplateVersion {
-  id           Int      @id @default(autoincrement())
-  template_id  Int
-  version      Int
-  name         String
-  html_content String   @db.Text
-  created_by   Int
-  created_at   DateTime @default(now())
-
-  // Relations
-  template SignatureTemplate @relation(fields: [template_id], references: [id], onDelete: Cascade)
-  creator  User @relation("TemplateVersionCreator", fields: [created_by], references: [id])
-
-  @@map("signature_template_versions")
-  @@index([template_id])
-  @@index([created_by])
-  @@unique([template_id, version])
 }
 
 model TemplateAssignment {
